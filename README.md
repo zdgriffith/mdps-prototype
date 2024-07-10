@@ -4,7 +4,9 @@ the purposes of prototyping SITC utility of the system.
 
 # References:
 * [MDPS/Unity Overview](https://unity-sds.gitbook.io/docs/mdps-overview)
-* [SBG Example Unity Workflows](https://github.com/unity-sds/sbg-workflows/)
+* Examples 
+  * [SBG Example Unity Workflows](https://github.com/unity-sds/sbg-workflows/)
+  * [Unity Example Application](https://github.com/unity-sds/unity-example-application)
 * [Dockstore](https://dockstore.org)
 * [Common Workflow Language](https://www.commonwl.org/)
 
