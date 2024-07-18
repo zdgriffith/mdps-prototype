@@ -5,41 +5,56 @@ import argparse
 import hashlib
 import json
 import logging
-import os
+import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
 
+if sys.version_info < (3, 10):
+    raise RuntimeError(f"Python >= 3.10 is required, got {sys.version}")
+
 LOG = logging
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--token", help="API token")
-parser.add_argument("--output", type=Path, default="output.json", help="JSON docs containing downloaded files")
+parser.add_argument(
+    "--token-file",
+    type=Path,
+    default=Path.home() / ".config/asipscli.json",
+    help="API token",
+)
+parser.add_argument(
+    "--output",
+    type=Path,
+    default="output.json",
+    help="JSON docs containing downloaded files",
+)
+parser.add_argument(
+    "--outdir", type=Path, default=Path("outputs"), help="directory to save outputs to"
+)
 parser.add_argument("input", type=Path, help="STAC doc json")
 args = parser.parse_args()
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-doc = json.load(open(args.doc))
+doc = json.load(open(args.input))
 
 
 def get_token() -> str:
-    if args.token is not None:
-        return args.token
-    path = Path(os.environ.get("HOME") or "") / ".config/asipscli.json"
-    if not path.exists():
-        raise ValueError(f"token not provided and {path} does not exist")
-    return json.load(open(path)).get("token")
+    LOG.info("loading token from %s", args.token_file)
+    if not args.token_file.exists():
+        raise ValueError(f"token file {args.token_file} does not exist")
+    return json.load(open(args.token_file)).get("token")
 
 
-def download(url: str) -> Path:
+def download(url: str, outdir: Path) -> Path:
     fname = Path(urlparse(url).path).name
+    fpath = outdir / fname
     resp = session.get(url, stream=True, timeout=10)
     resp.raise_for_status()
     expected_csum = resp.headers.get("Digest", "").replace("md5=", "")
     csum = hashlib.md5()
-    with open(fname, "wb") as fp:
+    with open(fpath, "wb") as fp:
         for block in resp.iter_content(chunk_size=2**20):
             fp.write(block)
             csum.update(block)
@@ -49,13 +64,18 @@ def download(url: str) -> Path:
             raise ValueError(f"Expected md5 {expected_csum}, got {got_csum}")
     else:
         LOG.warning("did not receive checksum in Digest header")
-    return Path(fname)
+    return Path(fpath)
 
 
 def geturl(item: dict) -> str | None:
     assets = [a["href"] for a in item.get("assets", []) if a["type"] == "data"]
     return assets[0] if assets else None
 
+
+if not args.outdir.is_dir():
+    parser.error("output must be a directory")
+
+args.outdir.mkdir(exist_ok=True, mode=0o755)
 
 # reuse connections
 session = requests.Session()
@@ -68,8 +88,8 @@ for item in doc.get("items", []):
         LOG.warning("no url found for item, skipping: %s", item)
         continue
     LOG.info("downloading %s", url)
-    fpath = download(url)
+    fpath = download(url, args.outdir)
     output["files"].append(str(fpath))
+    LOG.info("finished %s", fpath)
 
 json.dump(output, open(args.output, "wt"), indent=2)
-    LOG.info("finished %s", fpath)

@@ -1,0 +1,7 @@
+stage_in:
+  stac_json:
+    class: File
+    path: search-results.json
+  asips_token:
+    class: File
+    path: /home/brucef/.config/asipscli.json

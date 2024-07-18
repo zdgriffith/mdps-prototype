@@ -1,13 +1,13 @@
 FROM rockylinux/rockylinux:9
 RUN dnf install -y -q -q epel-release && \
   dnf install -y -q \
-      python3 \
+      python3.12 \
       tini \
     && \
   dnf clean all -y 
 
 # Create and configured the Python environment
-RUN python3 -m venv /opt/asips && \ 
+RUN python3.12 -m venv /opt/asips && \ 
   /opt/asips/bin/python3 -m pip install requests
 ENV VIRTUALENV=/opt/asips
 ENV PATH=$VIRTUALENV/bin:$PATH
