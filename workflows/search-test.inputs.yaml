@@ -1,0 +1,7 @@
+process:
+  search_json:
+    class: File
+    path: search-input.json
+  asips_token:
+    class: File
+    path: /home/brucef/.config/asipscli.json

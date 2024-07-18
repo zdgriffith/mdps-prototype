@@ -19,7 +19,7 @@ RUN curl -LO https://github.com/bmflynn/ccsds-rs/releases/download/0.1.0-beta.11
   mv x86_64-unknown-linux-gnu/ccsds /opt/asips/bin && \
   ccsds -V
 
-COPY download search /usr/local/bin/ 
+COPY scripts/* /usr/local/bin/ 
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["bash"]

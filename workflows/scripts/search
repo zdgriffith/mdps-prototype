@@ -31,7 +31,12 @@ LOG = logging
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--verbose", action="store_true")
-parser.add_argument("--token", help="API token")
+parser.add_argument(
+    "--token-file",
+    type=Path,
+    default=Path.home() / ".config/asipscli.json",
+    help="API token",
+)
 parser.add_argument("search", type=Path, help="JSON search doc")
 args = parser.parse_args()
 
@@ -45,12 +50,10 @@ doc = json.load(open(args.search))
 
 
 def get_token() -> str:
-    if args.token is not None:
-        return args.token
-    path = Path(os.environ.get("HOME") or "") / ".config/asipscli.json"
-    if not path.exists():
-        raise ValueError(f"token not provided and {path} does not exist")
-    return json.load(open(path)).get("token")
+    LOG.info("loading token from %s", args.token_file)
+    if not args.token_file.exists():
+        raise ValueError(f"token file {args.token_file} does not exist")
+    return json.load(open(args.token_file)).get("token")
 
 
 # reuse connections
@@ -99,4 +102,4 @@ for item in doc.get("items", []):
             }
         )
 
-print(json.dumps(catalog))
+print(json.dumps(catalog, indent=2))
