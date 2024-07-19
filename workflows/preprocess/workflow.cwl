@@ -11,16 +11,8 @@ requirements:
   SubworkflowFeatureRequirement: {}
 
 inputs:
-  stage_in:
-    type:
-      fields:
-        stac_json:
-          - string
-          - File
-        asips_token:
-          - File
-          - "null"
-      type: record
+  stac_json: File
+  asips_token: File?
 
 outputs:
   processed_files:

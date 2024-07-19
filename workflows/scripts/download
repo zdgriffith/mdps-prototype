@@ -73,7 +73,7 @@ def geturl(item: dict) -> str | None:
 
 
 if not args.outdir.is_dir():
-    parser.error("output must be a directory")
+    args.outdir.mkdir(exist_ok=True, mode=0o775)
 
 args.outdir.mkdir(exist_ok=True, mode=0o755)
 
