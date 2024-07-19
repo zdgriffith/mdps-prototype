@@ -51,7 +51,7 @@ EOF
 
 #### Run the Workflow
 ```console
-cwltool app/viirsl1/workflow.cwl workflow-input.yam
+cwltool --outdir=./outputs --log-dir=./outputs --parallel app/viirsl1/workflow.cwl workflow-input.yam
 ```
 
 
