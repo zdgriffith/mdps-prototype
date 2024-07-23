@@ -9,4 +9,6 @@ the purposes of prototyping SITC utility of the system.
   * [Unity Example Application](https://github.com/unity-sds/unity-example-application)
 * [Dockstore](https://dockstore.org)
 * [Common Workflow Language](https://www.commonwl.org/)
-
+  * [v1.2 Spec](https://www.commonwl.org/v1.2/)
+  * [Command Line Tool Reference](https://www.commonwl.org/v1.2/CommandLineTool.html)
+  * [Workflow Reference](https://www.commonwl.org/v1.2/Workflow.html)

@@ -9,11 +9,12 @@ RUN dnf -y -q install epel-release && \
 
 COPY v3.1.0/ /opt/viirsl1/v3.1.0/
 COPY docker/entrypoint.sh /
-ENV OCSSWROOT=/opt/viirsl1/v3.1.0
-RUN ln -s $OCSSWROOT/run_ocssw_viirsl1 /usr/local/bin/
+COPY docker/viirsl1 /opt/viirsl1/bin/
+
+ENV PATH=$PATH:/opt/viirsl1/bin
 
 WORKDIR /tmp
 RUN useradd app
 USER app
 
-ENTRYPOINT ["tini", "--", "/entrypoint.sh"]
+ENTRYPOINT ["tini", "--"]

@@ -11,8 +11,8 @@ $graph:
         type: File
         outputSource: mend/l1b
     steps:
-      scale:
-        run: "#viirsl1mend"
+      mend:
+        run: "#viirsmend"
         in:
           l1b: l1b
           geo: geo

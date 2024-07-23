@@ -4,75 +4,58 @@ $graph:
   - class: Workflow
     id: main
     inputs:
-      outfn: string
-      sensor_tag: string
+      output_type: string?
+      band_type: string?
       l1b: File
       geo: File
     outputs:
-      l1b: 
+      iff: 
         type: File
-        outputSource: mend/l1b
+        outputSource: process/iff
     steps:
       process:
         run: "#process"
         in:
-          iff: iff 
+          output_type: output_type
+          band_type: band_type
+          l1b: l1b
+          geo: geo
         out: [iff]
+
 
   - class: CommandLineTool
     id: process
-    baseCommand: ifflw
+    baseCommand: /opt/iff/bin/viirs-iff
+    stdout: stdout.txt
+    stderr: stderr.txt
     requirements:
-      InitialWorkDirRequirement:
-        listing:
-          - $(inputs.iff) 
+      InlineJavascriptRequirement: {}
       DockerRequirement:
-        dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-prototype/demlw:1.0.7
+        dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-prototype/iff:2.7.3
     inputs:
-      satellite: 
-        label: one of snpp, noaa20, noaa21
+      output_type:
         type: string
+        label: Type of output data; one of hdf, nc
+        default: nc
         inputBinding:
-          position: 0
-      outfn: 
-        type: string
-        inputBinding:
-          prefix: -o
-      sensor_tag:
-        type: string
-        default: viirs-nasa
-        inputBinding:
-          position: 1
+          prefix: --output-type
       band_type:
-        label: Type of band to process; one of svi, svm, dnb
+        label: Type of band to process; one of m, d, i
         type: string
+        default: m
+        inputBinding:
+          prefix: 
+          position: 1
+      geo:
+        type: File 
         inputBinding:
           position: 2
-      date: 
-        label: Begin date as YYYYMMDD
-        type: string
+      l1b:
+        type: File 
         inputBinding:
           position: 3
-      start_time: 
-        label: Begin time as HHMMSS
-        type: string
-        inputBinding:
-          position: 4
-      end_time: 
-        label: End time as HHMMSS
-        type: string
-        inputBinding:
-          position: 5
-      inputs:
-        label: L1b and GEO inputs
-        type: 
-          items: File
-        inputBinding:
-          itemSeparator: " "
-          position: 6
     outputs:
       iff:
         type: File
-        outputSource: iff
-
-
+        outputBinding: 
+          glob: "IFF???_*"

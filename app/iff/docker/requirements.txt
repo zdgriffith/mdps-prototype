@@ -1,0 +1,6 @@
+numpy<2.0
+fnmeta~=0.16.3
+iff2==2.7.3
+demlw==1.0.7
+# Updated grain that uses SDTK leapsec file
+grain>=2.3.1

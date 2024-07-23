@@ -1,0 +1,241 @@
+#!/usr/bin/env python3
+"""
+ASIPS OCSSW driver script for VIIRS L1 v3.1 and v3.2.
+
+Processes are exec'd and will replace the current python process when called.
+"""
+import argparse
+import logging
+import os
+import re
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
+
+LOG = logging
+
+# Maps satellite names to names used in LUTs
+lut_satellites = {
+    "snpp": "NPP",
+    "noaa20": "J1",
+    "noaa21": "J2",
+}
+
+
+@dataclass
+class LUT:
+    filename: str
+    path: Path
+    version: tuple[int, ...]
+    lut_type: str
+
+
+def find_luts(root: Path, satellite: str) -> dict[str, Optional[LUT]]:
+    """Find all the expected LUTs for VIIRS L1 processing.
+
+    NOTE: This doesn't currently work on N21
+    """
+    satellite = lut_satellites[satellite]
+    luts = {
+        "CAL_DNB": None,
+        "CAL_RSB": None,
+        "CAL_STRAYLIGHT": None,
+        "CAL": None,
+        "CMN": None,
+        "GEO": None,
+    }
+    luts: dict[str, Optional[LUT]]
+    for path, _, filenames in os.walk(root):
+        for fn in filenames:
+            pfx = f"VIIRS_{satellite}_"
+            if not fn.startswith(pfx) or "_LUT_" not in fn:
+                continue
+            lut = LUT(
+                fn,
+                Path(path) / fn,
+                (0, 0, 0, 0),
+                fn.replace(pfx, "")
+                .split("_LUT_")[0]
+                .replace("_DYNAMIC", "")
+                .replace("_STATIC", ""),
+            )
+            if lut.lut_type not in luts:
+                print(f"Unknown LUT type: {lut}")
+                continue
+            m = re.search(r"_v(\d+)\.(\d+)\.(\d+)\.(\d+)_", fn)
+            if m:
+                lut.version = tuple(int(x) for x in m.groups())
+
+            existing = luts.get(lut.lut_type)
+            if not existing or lut.version > existing.version:
+                luts[lut.lut_type] = lut
+
+    return luts
+
+
+opt_names = {
+    "CAL_RSB": "rsb_dynamic_lut_file",
+    "CAL_DNB": "dnb_dynamic_lut_file",
+    "CAL_STRAYLIGHT": "straylight_lut_file",
+    "CAL": "static_lut_file",
+    "CMN": "cmn_lut_file",
+    "GEO": "geo_lut_file",
+}
+
+
+def luts_flags(luts: dict[str, Optional[LUT]]) -> dict[str, str]:
+    opts = {}
+    for name, lut in luts.items():
+        if lut is None:
+            LOG.warning("missing %s LUT", name)
+            continue
+        if name not in opt_names:
+            raise ValueError(f"unknown LUT name {name}; not in {opt_names}")
+        opts[opt_names[name]] = str(lut.path) if lut else ""
+    return opts
+
+
+def run_viirs(swdir: Path, cmd: list[str]):
+    cmd = [str(s) for s in cmd]
+    LOG.info("Running: %s", " ".join(cmd))
+    env = {
+        "OCSSWROOT": str(swdir),
+        "OCDATAROOT": str(swdir / "share"),
+        "OCVARROOT": str(swdir / "var"),
+        "PATH": f"{os.environ['PATH']}:{swdir}/bin",
+    }
+    os.execvpe(
+        cmd[0],
+        cmd[:],
+        env,
+    )
+
+
+def dynanc_flags(swdir: Path) -> dict[str, str]:
+    return {
+        "terrain_path": str(swdir / "share/viirs/dem"),
+        "land_water_mask_path": str(swdir / "share/common"),
+        "polar_wander_file": str(swdir / "var/common/polar_wander.ascii"),
+        "leapsec_file": str(swdir / "var/common/tai-utc.dat"),
+    }
+
+
+def filenames(
+    type_: str, l1a: Path, satellite: str, created: Optional[datetime] = None
+) -> dict[str, str]:
+    typ = {"l1b": "02", "geo": "03"}[type_]
+    tag = {"snpp": "NP", "noaa20": "J1", "noaa21": "J2"}[satellite]
+    # V2024183_00_06_00.L1A_JPSS1.nc
+    granule = datetime.strptime(l1a.name.split(".")[0], "V%Y%j%H%M%S")
+    created = created or datetime.utcnow()
+    col = collections[satellite]
+    return {
+        b.lower(): f"V{tag}{typ}{b}.A{granule:%Y%j.%H%M}.{col:>03}.{created:%Y%j%H%M%S}.nc"
+        for b in ("MOD", "IMG", "DNB") + (("CDG",) if type_ == "l1b" else tuple())
+    }
+
+
+def run_l1a(parser: argparse.ArgumentParser, args: argparse.Namespace):
+    if args.satellite == "noaa21" and len(args.sc) != 4:
+        parser.error("need spacecraft 11, 30, 37 & 34 for noaa21")
+    elif args.satellite != "noaa21" and len(args.sc) != 3:
+        parser.error("need spacecraft 11, 8, and 0 for snpp and noaa20")
+    cmd = ["l1agen_viirs", args.sci, *args.sc[:3]]
+    if len(args.sc) > 3:
+        cmd += ["-g", args.sc[3]]
+    cmd += [args.granule_len]
+
+    run_viirs(args.swdir, cmd)
+
+
+def run_geo(parser: argparse.ArgumentParser, args: argparse.Namespace):
+    luts = find_luts(args.swdir, args.satellite)
+    names = filenames("geo", args.l1a, args.satellite, args.created)
+    run_viirs(
+        args.swdir,
+        [
+            "geolocate_viirs",
+            "verbose=true",
+            f"ifile={args.l1a}",
+            f"geofile_mod={names['mod']}",
+            f"geofile_img={names['img']}",
+            f"geofile_dnb={names['dnb']}",
+        ]
+        + [f"{k}={v}" for k, v in dynanc_flags(args.swdir).items()]
+        + [f"{k}={v}" for k, v in luts_flags(luts).items()],
+    )
+
+
+def run_l1b(parser: argparse.ArgumentParser, args: argparse.Namespace):
+    luts = find_luts(args.swdir, args.satellite)
+    names = filenames("l1b", args.l1a, args.satellite, args.created)
+    run_viirs(
+        args.swdir,
+        [
+            "calibrate_viirs",
+            "verbose=true",
+            f"ifile={args.l1a}",
+            f"l1bfile_mod={names['mod']}",
+            f"l1bfile_img={names['img']}",
+            f"l1bfile_dnb={names['dnb']}",
+            f"l1bfile_cdg={names['cdg']}",
+        ]
+        + [f"{k}={v}" for k, v in luts_flags(luts).items()],
+    )
+
+
+# FIXME: hard-coded collections
+collections = {
+    "snpp": "2",
+    "noaa20": "21",
+    "noaa21": "2",
+}
+
+
+if __name__ == "__main__":
+    now = datetime.utcnow()
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--swdir",
+        type=Path,
+        default=Path("/opt/viirsl1"),
+        help="VIIRS L1 Software root directory",
+    )
+    parser.add_argument(
+        "--satellite", choices=["snpp", "noaa20", "noaa21"], required=True
+    )
+
+    def timestamp(v):
+        return datetime.strptime(v, "%Y-%m-%dT%H:%M:%SZ")
+
+    subs = parser.add_subparsers()
+
+    l1a = subs.add_parser("l1a")
+    l1a.add_argument("--granule-len", type=str, default="6")
+    l1a.add_argument("sci", type=Path)
+    l1a.add_argument(
+        "sc",
+        nargs="+",
+        type=Path,
+        help="Requires apid 11, 8, 0 for SNPP, N20, and apid 11, 30, 37, 34, in that order for N21",
+    )
+    l1a.set_defaults(func=run_l1a)
+
+    geo = subs.add_parser("geo")
+    geo.add_argument("--created", type=timestamp, default=now)
+    geo.add_argument("l1a", type=Path)
+    geo.set_defaults(func=run_geo)
+
+    l1b = subs.add_parser("l1b")
+    l1b.add_argument("--created", type=timestamp, default=now)
+    l1b.add_argument("l1a", type=Path)
+    l1b.set_defaults(func=run_l1b)
+
+    args = parser.parse_args()
+
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+    # run funcs exec, so this will not return
+    args.func(parser, args)

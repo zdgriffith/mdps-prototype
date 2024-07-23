@@ -2,15 +2,11 @@
 cwlVersion: v1.2
 class: CommandLineTool
 id: viirsl1-geo
-baseCommand: [run_ocssw_viirsl1]
+baseCommand: [viirsl1]
 arguments: ["--satellite=$(inputs.satellite)", "--swdir=/opt/viirsl1/v3.1.0", "geo"]
 
 stdout: stdout.txt
 stderr: stderr.txt
-
-requirements:
-  DockerRequirement:
-    dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-prototype/viirsl1:v3.1.0
 
 inputs:
   satellite: 

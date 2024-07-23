@@ -2,20 +2,22 @@
 cwlVersion: v1.2
 $graph:
   - class: Workflow
+    label: DemLW for IFF files
     id: main
     inputs:
       l1b: File
-      geo: File
+      datadir: Directory
     outputs:
       l1b: 
         type: File
-        outputSource: mend/l1b
+        outputSource: process/l1b
     steps:
       process:
         run: "#process"
         in:
-          iff: iff 
-        out: [iff]
+          l1b: l1b
+          datadir: datadir
+        out: [l1b]
 
   - class: CommandLineTool
     id: process
@@ -23,18 +25,24 @@ $graph:
     requirements:
       InitialWorkDirRequirement:
         listing:
-          - $(inputs.iff) 
+          - $(inputs.l1b) 
       DockerRequirement:
         dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-prototype/demlw:1.0.7
+      EnvVarRequirement:
+        envDef:
+          DEMLW_DIR: $(inputs.datadir)
     inputs:
-      iff:
+      l1b:
         type: File
         inputBinding:
           position: 0
           valueFrom: $(self.basename)
+      datadir:
+        type: Directory
     outputs:
-      iff:
+      l1b:
         type: File
-        outputSource: iff
+        outputBinding:
+          glob: "IFF???.*"
 
 

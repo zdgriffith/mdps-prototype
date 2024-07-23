@@ -2,17 +2,13 @@
 cwlVersion: v1.2
 class: CommandLineTool
 id: viirsl1-l1a
-baseCommand: [run_ocssw_viirsl1]
+baseCommand: [viirsl1]
 arguments: ["--satellite=$(inputs.satellite)", "--swdir=/opt/viirsl1/v3.1.0", "l1a"]
 stdout: stdout.txt
 stderr: stderr.txt
 # FIXME: Necessary to map 101 to success because incomplete scans cause it to exit 101 because
 #        we have not provided inputs with full context.
 successCodes: [0, 101]
-
-requirements:
-  DockerRequirement:
-    dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-prototype/viirsl1:v3.1.0
 
 inputs:
   satellite: 
