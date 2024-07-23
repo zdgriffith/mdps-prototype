@@ -1,0 +1,16 @@
+satellite: noaa20
+sci: 
+  class: File
+  path: ../inputs/P1590826VIIRSSCIENCE.dat
+diary: 
+  class: File
+  path: ../inputs/P1590011.dat
+adcs: 
+  class: File
+  path: ../inputs/P1590008.dat
+bus: 
+  class: File
+  path: ../inputs/P1590000.dat
+demlw_datadir:
+  class: Directory
+  path: /mnt/software/support/demlw-static/0.2017.11.07/

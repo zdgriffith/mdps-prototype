@@ -25,7 +25,7 @@ outputs:
 
 steps:
   viirsl1:
-    run: app/viirsl1/workflow.cwl
+    run: ../tasks/viirsl1/workflow.cwl
     in:
       satellite: satellite
       sci: sci
@@ -35,7 +35,7 @@ steps:
     out: [l1bm, geom]
 
   iff:
-    run: app/iff/workflow.cwl
+    run: ../tasks/iff/workflow.cwl
     in:
       output_type: 
         default: hdf
@@ -44,21 +44,21 @@ steps:
     out: [iff]
 
   bowtie_restore:
-    run: app/viirsmend/workflow.cwl
+    run: ../tasks/viirsmend/workflow.cwl
     in:
       l1b: iff/iff
       geo: viirsl1/geom
     out: [l1b]
 
   demlw:
-    run: app/demlw/workflow.cwl
+    run: ../tasks/demlw/workflow.cwl
     in:
       l1b: bowtie_restore/l1b
       datadir: demlw_datadir
     out: [l1b]
 
   l1bscale:
-    run: app/viirs_l1bscale/workflow.cwl
+    run: ../tasks/viirs_l1bscale/workflow.cwl
     in:
       satellite: satellite
       l1bm: demlw/l1b

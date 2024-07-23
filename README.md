@@ -2,6 +2,18 @@
 Code, notes, and other artifacts related to implementing a workflow in MDPS (Unity) for
 the purposes of prototyping SITC utility of the system.
 
+
+## Application Tasks (`./tasks`)
+This directory contains sub-workflows that make up the end-to-end workflow. They are 
+intended to be simply workflows containing containerized versions of parts of the 
+entire workflow while not getting wrapped up in the entire Application Package spec,
+e.g., STAC catlog input and output.
+
+These tasks will be used as subworkflows to the overall workflow that will end up 
+being the Application Package.
+
+
+
 # References:
 * [MDPS/Unity Overview](https://unity-sds.gitbook.io/docs/mdps-overview)
 * Examples 
