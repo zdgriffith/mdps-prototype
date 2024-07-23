@@ -3,7 +3,7 @@ cwlVersion: v1.2
 class: CommandLineTool
 id: viirsl1-l1a
 baseCommand: [viirsl1]
-arguments: ["--satellite=$(inputs.satellite)", "--swdir=/opt/viirsl1/v3.1.0", "l1a"]
+arguments: ["--satellite=$(inputs.satellite)", "--swdir=/opt/viirsl1/$(inputs.version)", "l1a"]
 stdout: stdout.txt
 stderr: stderr.txt
 # FIXME: Necessary to map 101 to success because incomplete scans cause it to exit 101 because
@@ -11,6 +11,7 @@ stderr: stderr.txt
 successCodes: [0, 101]
 
 inputs:
+  version: string
   satellite: 
     type: string
   granlen:

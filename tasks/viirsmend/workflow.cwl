@@ -9,9 +9,9 @@ $graph:
     outputs:
       l1b: 
         type: File
-        outputSource: mend/l1b
+        outputSource: viirsmend/l1b
     steps:
-      mend:
+      viirsmend:
         run: "#viirsmend"
         in:
           l1b: l1b
@@ -20,19 +20,24 @@ $graph:
 
   - class: CommandLineTool
     id: viirsmend 
-    baseCommand: viirsmend 
+    baseCommand: ["sh", "driver.sh"] 
+    stdout: stdout.txt
+    stderr: stderr.txt
     requirements:
+      # Write a driver script to copy the file form its source location to the output dir 
+      # so viirsl1mend can mend it in place.
       InitialWorkDirRequirement:
         listing:
-          - $(inputs.l1b) 
+          - entryname: driver.sh
+            entry: |-
+              set -exv
+              cp $(inputs.l1b.path) $(runtime.outdir)/$(inputs.l1b.basename)
+              exec viirsl1mend $(runtime.outdir)/$(inputs.l1b.basename) $(inputs.geo.path)
       DockerRequirement:
         dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-prototype/viirsmend:1.2.17
     inputs:
       l1b:
         type: File
-        inputBinding:
-          position: 0
-          valueFrom: $(self.basename)
       geo:
         type: File
         inputBinding:

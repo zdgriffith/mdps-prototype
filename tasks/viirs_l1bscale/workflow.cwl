@@ -9,19 +9,21 @@ $graph:
     outputs:
       l1bm: 
         type: File
-        outputSource: scale/l1bm
+        outputSource: l1bscale/l1bm
     steps:
-      scale:
-        run: "#viirs_l1bscale"
+      l1bscale:
+        run: "#l1bscale"
         in:
           satellite: satellite
           l1bm: l1bm
         out: [l1bm]
 
   - class: CommandLineTool
-    id: viirs_l1bscale
+    id: l1bscale
     baseCommand: VIIRS_L1BSCALE.exe
     arguments: ["$(inputs.l1bm)", "/opt/viirs_l1bscale/dist/$(inputs.satellite)_scale_factors.txt"]
+    stdout: stdout.txt
+    stderr: stderr.txt
     requirements:
       InitialWorkDirRequirement:
         listing:

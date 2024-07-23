@@ -2,47 +2,53 @@
 cwlVersion: v1.2
 $graph:
   - class: Workflow
-    label: DemLW for IFF files
     id: main
+    label: DemLW for IFF files
     inputs:
       l1b: File
       datadir: Directory
     outputs:
       l1b: 
         type: File
-        outputSource: process/l1b
+        outputSource: demlw/l1b
     steps:
-      process:
-        run: "#process"
+      demlw:
+        run: "#demlw"
         in:
           l1b: l1b
           datadir: datadir
         out: [l1b]
 
   - class: CommandLineTool
-    id: process
-    baseCommand: ifflw
+    id: demlw
+    baseCommand: ["sh", "driver.sh"]
+    stdout: stdout.txt
+    stderr: stderr.txt
     requirements:
+      # Write a driver script to copy the file form its source location to the output dir 
+      # so viirsl1mend can mend it in place.
       InitialWorkDirRequirement:
         listing:
-          - $(inputs.l1b) 
+          - entryname: driver.sh
+            entry: |-
+              set -exv
+              cp $(inputs.l1b.path) $(runtime.outdir)/$(inputs.l1b.basename)
+              ifflw $(runtime.outdir)/$(inputs.l1b.basename) 
+              find .
       DockerRequirement:
         dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-prototype/demlw:1.0.7
       EnvVarRequirement:
         envDef:
-          DEMLW_DIR: $(inputs.datadir)
+          DEMLW_DIR: $(inputs.datadir.path)
     inputs:
       l1b:
         type: File
-        inputBinding:
-          position: 0
-          valueFrom: $(self.basename)
       datadir:
         type: Directory
     outputs:
       l1b:
         type: File
         outputBinding:
-          glob: "IFF???.*"
+          glob: "IFF*"
 
 

@@ -11,10 +11,10 @@ $graph:
     outputs:
       iff: 
         type: File
-        outputSource: process/iff
+        outputSource: iff/iff
     steps:
-      process:
-        run: "#process"
+      iff:
+        run: "#iff"
         in:
           output_type: output_type
           band_type: band_type
@@ -24,7 +24,7 @@ $graph:
 
 
   - class: CommandLineTool
-    id: process
+    id: iff
     baseCommand: /opt/iff/bin/viirs-iff
     stdout: stdout.txt
     stderr: stderr.txt
@@ -44,16 +44,15 @@ $graph:
         type: string
         default: m
         inputBinding:
-          prefix: 
-          position: 1
+          prefix: --band_type
       geo:
         type: File 
         inputBinding:
-          position: 2
+          position: 1
       l1b:
         type: File 
         inputBinding:
-          position: 3
+          position: 2
     outputs:
       iff:
         type: File

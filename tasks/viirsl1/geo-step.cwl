@@ -3,12 +3,14 @@ cwlVersion: v1.2
 class: CommandLineTool
 id: viirsl1-geo
 baseCommand: [viirsl1]
-arguments: ["--satellite=$(inputs.satellite)", "--swdir=/opt/viirsl1/v3.1.0", "geo"]
+arguments: ["--satellite=$(inputs.satellite)", "--swdir=/opt/viirsl1/$(inputs.version)", "geo"]
 
 stdout: stdout.txt
 stderr: stderr.txt
 
 inputs:
+  version:
+    type: string
   satellite: 
     type: string
   l1a:

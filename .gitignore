@@ -1,8 +1,5 @@
-*.PDS
-*.nc
-*.dat
-venv/
-*-results.json
-*-input.yaml
+*inputs.yaml
 stdout.txt
 stderr.txt
+inputs/
+outputs/
