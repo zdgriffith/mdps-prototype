@@ -16,5 +16,8 @@ RUN python3 -m pip install --no-cache-dir \
 ENV GRAIN_DISABLE_DOWNLOAD=1 
 ENV GRAIN_IGNORE_EXPIRED=1
 
+COPY docker/demlw-static/ /opt/demlw/static/
+ENV DEMLW_DIR=/opt/demlw/static
+
 RUN useradd app
 USER app

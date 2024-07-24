@@ -6,7 +6,6 @@ $graph:
     label: DemLW for IFF files
     inputs:
       l1b: File
-      datadir: Directory
     outputs:
       l1b: 
         type: File
@@ -16,7 +15,6 @@ $graph:
         run: "#demlw"
         in:
           l1b: l1b
-          datadir: datadir
         out: [l1b]
 
   - class: CommandLineTool
@@ -37,14 +35,9 @@ $graph:
               find .
       DockerRequirement:
         dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-prototype/demlw:1.0.7
-      EnvVarRequirement:
-        envDef:
-          DEMLW_DIR: $(inputs.datadir.path)
     inputs:
       l1b:
         type: File
-      datadir:
-        type: Directory
     outputs:
       l1b:
         type: File
