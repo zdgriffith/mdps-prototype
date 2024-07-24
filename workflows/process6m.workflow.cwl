@@ -16,12 +16,9 @@ inputs:
   demlw_datadir: Directory
 
 outputs:
-  geom: 
+  iff: 
     type: File
-    outputSource: viirsl1/geom
-  l1bm: 
-    type: File
-    outputSource: l1bscale/l1bm 
+    outputSource: demlw/l1b
 
 steps:
   viirsl1:
@@ -63,5 +60,3 @@ steps:
       l1b: iff/iff
       datadir: demlw_datadir
     out: [l1b]
-
-
