@@ -33,7 +33,7 @@ $graph:
             entry: |-
               set -exv
               cp $(inputs.l1b.path) $(runtime.outdir)/$(inputs.l1b.basename)
-              ifflw $(runtime.outdir)/$(inputs.l1b.basename) 
+              ifflw -v $(runtime.outdir)/$(inputs.l1b.basename) 
               find .
       DockerRequirement:
         dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-prototype/demlw:1.0.7

@@ -34,33 +34,34 @@ steps:
       bus: bus
     out: [l1bm, geom]
 
-  iff:
-    run: ../tasks/iff/workflow.cwl
-    in:
-      output_type: 
-        default: hdf
-      l1b: viirsl1/l1bm
-      geo: viirsl1/geom
-    out: [iff]
-
-  bowtie_restore:
+  viirsmend:
     run: ../tasks/viirsmend/workflow.cwl
     in:
-      l1b: iff/iff
+      l1b: viirsl1/l1bm
       geo: viirsl1/geom
-    out: [l1b]
-
-  demlw:
-    run: ../tasks/demlw/workflow.cwl
-    in:
-      l1b: bowtie_restore/l1b
-      datadir: demlw_datadir
     out: [l1b]
 
   l1bscale:
     run: ../tasks/viirs_l1bscale/workflow.cwl
     in:
       satellite: satellite
-      l1bm: demlw/l1b
+      l1bm: viirsmend/l1b
     out: [l1bm]
+
+  iff:
+    run: ../tasks/iff/workflow.cwl
+    in:
+      output_type: 
+        default: hdf
+      l1b: l1bscale/l1bm
+      geo: viirsl1/geom
+    out: [iff]
+
+  demlw:
+    run: ../tasks/demlw/workflow.cwl
+    in:
+      l1b: iff/iff
+      datadir: demlw_datadir
+    out: [l1b]
+
 

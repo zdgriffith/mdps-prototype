@@ -3,3 +3,4 @@ stdout.txt
 stderr.txt
 inputs/
 outputs/
+cache/

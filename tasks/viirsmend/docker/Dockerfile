@@ -1,7 +1,7 @@
 FROM python:3.12 AS build
 RUN apt update && apt install -y \
-    libhdf4-0-alt \
-    libhdf4-alt-dev \ 
+    libhdf4-0 \
+    libhdf4-dev \ 
   && \
   rm -rf /var/lib/apt/lists/*
 RUN python3 -m venv /opt/viirsmend

@@ -1,7 +1,7 @@
 #!/bin/bash
 rm -rf outputs
 exec cwltool \
-  --leave-outputs \
+  --cachedir=./cache \
   --parallel \
   --outdir=./outputs \
   --log-dir=./outputs \
