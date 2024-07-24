@@ -1,4 +1,7 @@
-*inputs.yaml
+*.PDS
+*.nc
+*.dat
+*.bkp
 stdout.txt
 stderr.txt
 inputs/
