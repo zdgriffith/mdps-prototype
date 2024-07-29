@@ -3,7 +3,7 @@ cwlVersion: v1.2
 class: CommandLineTool
 id: viirsl1-l1a
 baseCommand: [viirsl1]
-arguments: ["--satellite=$(inputs.satellite)", "--swdir=/opt/viirsl1/$(inputs.version)", "l1a"]
+arguments: ["$(inputs.satellite)", "l1a"]
 stdout: stdout.txt
 stderr: stderr.txt
 # FIXME: Necessary to map 101 to success because incomplete scans cause it to exit 101 because
@@ -44,7 +44,7 @@ inputs:
     type: File?
     label: Required SOH APID 34 for N21
     inputBinding:
-      prefix: -g
+      position: 4
 
 outputs:
   l1a:

@@ -6,7 +6,7 @@ label: NASA VIIRS Level-1 L1A, L1B, and GEO
 
 requirements:
   DockerRequirement:
-    dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-prototype/viirsl1:v3.1.0
+    dockerPull: gitlab.ssec.wisc.edu:5555/sips/viirs_l1-build/viirsl1:v3.1.0
 
 inputs:
   version:
