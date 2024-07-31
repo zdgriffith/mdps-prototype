@@ -27,8 +27,8 @@ Yet to be added:
 You can use `pdsfetch` to grab the necessary data
 ```sh
 mkdir ../inputs
-for name in 0000 0008 0011 0826VIIRSSCIENCE; do
-pdsfetch -s "2024-07-01 00:05:00" -e "2024-07-01 00:13:00" -o ../inputs/P159${name}-T.dat  P159${name}-T
+for name in 0000 0008 0011 0826VIIRSSCIENCE; do 
+pdsfetch -o ../inputs/P159${name}-T.dat P159${name}-T 2024-07-01T00:05:00Z 2024-07-01T00:13:00Z
 done
 ```
 
