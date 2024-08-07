@@ -11,7 +11,7 @@ $graph:
         type: string
       gdas1: File
       gdas2: File
-      iff: File
+      l1b: File
       nise: File
       sst: File
     outputs:
@@ -24,7 +24,7 @@ $graph:
         in:
           sat: satellite
           granule: granule
-          l1b: iff
+          l1b: l1b
           nise: nise
           sst: sst
           gdas1: gdas1
@@ -45,7 +45,7 @@ $graph:
           - $(inputs.gdas1) 
           - $(inputs.gdas2) 
       DockerRequirement:
-        dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-prototype/mvcm:20230522-1
+        dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-prototype/mvcm:20240807-1
     inputs:
       sat: 
         type: string
@@ -79,4 +79,4 @@ $graph:
       cldmsk_l2:
         type: File
         outputBinding:
-          glob: "CLDMSK*"
+          glob: "mvcm*"

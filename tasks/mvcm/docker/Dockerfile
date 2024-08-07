@@ -3,10 +3,7 @@ FROM rockylinux/rockylinux:9
 ARG version
 
 RUN dnf -y -q install epel-release && \
-  dnf -y -q install \
-      netcdf \
-      netcdf-fortran \
-    && \
+  dnf -y -q install netcdf && \
   dnf -y -q clean all 
 
 COPY ${version}/ /opt/mvcm/

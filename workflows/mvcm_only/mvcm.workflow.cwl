@@ -19,7 +19,7 @@ inputs:
   sst: File
 
 outputs:
-  cldmsk_l2: 
+  cldmsk_l2:
     type: File
     outputSource: mvcm/cldmsk_l2
 
