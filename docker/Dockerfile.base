@@ -1,0 +1,23 @@
+# Docker base image for this project.
+#
+# Bake in all the common deps to this image which then should be used as a 
+# common base image to the other task images.
+#
+# This also setu
+# 
+FROM rockylinux/rockylinux:9
+RUN dnf -yqq install epel-release && \
+  dnf -yqq install \
+    python3.11 \
+    python3.11-pip \
+    tini \
+    && \
+  dnf -yqq clean all
+
+ENV \
+  APPDIR=/opt/mdps-prototype
+RUN python3.11 -m venv $APPDIR 
+ENV \
+  VIRTUALENV=$APPDIR \
+  PATH=$APPDIR/bin:$PATH
+

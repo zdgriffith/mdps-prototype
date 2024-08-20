@@ -6,10 +6,12 @@ import hashlib
 import json
 import logging
 import sys
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
+from pystac import Asset, Catalog, CatalogType, Item, ItemCollection, layout
 
 if sys.version_info < (3, 10):
     raise RuntimeError(f"Python >= 3.10 is required, got {sys.version}")
@@ -32,7 +34,7 @@ parser.add_argument(
 parser.add_argument(
     "--outdir", type=Path, default=Path("outputs"), help="directory to save outputs to"
 )
-parser.add_argument("input", type=Path, help="STAC doc json")
+parser.add_argument("input", type=Path, help="STAC Feature Collection doc")
 args = parser.parse_args()
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -67,8 +69,8 @@ def download(url: str, outdir: Path) -> Path:
     return Path(fpath)
 
 
-def geturl(item: dict) -> str | None:
-    assets = [a["href"] for a in item.get("assets", []) if a["type"] == "data"]
+def geturl(item: Item) -> str | None:
+    assets = [a.href for k, a in item.assets.items() if k == "data"]
     return assets[0] if assets else None
 
 
@@ -77,19 +79,55 @@ if not args.outdir.is_dir():
 
 args.outdir.mkdir(exist_ok=True, mode=0o755)
 
+collection = ItemCollection.from_file(args.input)
+
 # reuse connections
 session = requests.Session()
 session.headers = {"x-api-token": get_token()}
 
-output = {"files": []}
-for item in doc.get("items", []):
+
+def parse_timestamp(v: str) -> datetime:
+    return datetime.strptime(v, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+
+def pformat(x):
+    return json.dumps(x.to_dict(), indent=2)
+
+
+catalog = Catalog(
+    id="local",
+    description="Results from local download",
+    href=str(args.outdir / "catalog.json"),
+    catalog_type=CatalogType.SELF_CONTAINED,
+)
+errs: list[Item] = []
+for item in ItemCollection.from_file(args.input):
     url = geturl(item)
     if url is None:
         LOG.warning("no url found for item, skipping: %s", item)
         continue
-    LOG.info("downloading %s", url)
-    fpath = download(url, args.outdir)
-    output["files"].append(str(fpath))
-    LOG.info("finished %s", fpath)
+    LOG.info("downloading %s", pformat(item))
+    try:
+        fpath = download(url, args.outdir)
+    except (IOError, ValueError, requests.HTTPError) as err:
+        LOG.warning("failed %s: %s", err, item)
+        errs.append(item)
+        continue
 
-json.dump(output, open(args.output, "wt"), indent=2)
+    catalog.add_item(
+        Item(
+            id=fpath.name,
+            geometry=None,
+            bbox=None,
+            properties={},
+            href=str(fpath.with_suffix(fpath.suffix + ".json")),
+            datetime=parse_timestamp(item.properties["start_datetime"]),
+            start_datetime=parse_timestamp(item.properties["start_datetime"]),
+            end_datetime=parse_timestamp(item.properties["end_datetime"]),
+            assets={"data": Asset(href=fpath.name)},
+        ),
+        strategy=layout.AsIsLayoutStrategy(),
+    )
+    LOG.info("finished %s", url)
+
+catalog.save()

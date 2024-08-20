@@ -27,6 +27,13 @@ I expect these will eventually become the OGC Application packages.
 Currently, there's just the WIP [process6m](./workflows/process6m.workflow.cwl) workflow.
 
 
+## STAC Catalog
+Inputs to OCG Applications are provided as STAC Catalogs.
+
+See [pystac](https://pystac.readthedocs.io/en/stable/index.html) for catalog and collection
+generation code.
+
+
 # References:
 * [MDPS/Unity Overview](https://unity-sds.gitbook.io/docs/mdps-overview)
 * Examples 

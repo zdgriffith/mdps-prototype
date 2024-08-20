@@ -5,27 +5,16 @@ The output format is an approximation of what would be returned from
 the NASA CMR STAC catalog based on the results I get from the following:
 
     https://cmr.earthdata.nasa.gov/stac/ASIPS/search?collections=CLDMSK_L2_VIIRS_NOAA20_NRT.v1&datetime=2024-07-10T00:00:00Z/2024-07-11T00:00:00Z&limit=10
-
-Input doc format:
-{
-    "items": [
-        {
-            # Dawgfs search params
-            "product": ...,
-            "timerange": ...,
-            "satellite": ...,
-        },
-        ...
-    ]
-}
 """
 import argparse
 import json
 import logging
-import os
+import sys
+from datetime import datetime
 from pathlib import Path
 
 import requests
+from pystac import Asset, Item, ItemCollection
 
 LOG = logging
 
@@ -37,7 +26,16 @@ parser.add_argument(
     default=Path.home() / ".config/asipscli.json",
     help="API token",
 )
-parser.add_argument("search", type=Path, help="JSON search doc")
+
+
+def timestamp(v):
+    return datetime.strptime(v, "%Y-%m-%dT%H:%M:%SZ")
+
+
+parser.add_argument("--product", help="dawg product name")
+parser.add_argument("--start", type=timestamp)
+parser.add_argument("--stop", type=timestamp)
+parser.add_argument("--satellite", choices=["", "snpp", "noaa20", "noaa21"])
 args = parser.parse_args()
 
 lvl = logging.DEBUG if args.verbose else logging.INFO
@@ -45,8 +43,6 @@ logging.basicConfig(
     level=logging.DEBUG if args.verbose else logging.INFO,
     format="%(message)s",
 )
-
-doc = json.load(open(args.search))
 
 
 def get_token() -> str:
@@ -56,50 +52,50 @@ def get_token() -> str:
     return json.load(open(args.token_file)).get("token")
 
 
+def parse_timestamp(v: str) -> datetime:
+    return datetime.strptime(v, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+
 # reuse connections
 session = requests.Session()
 session.headers = {"x-api-token": get_token()}
 
 
-api_base_url = doc.get("api_base_url", "https://sips.ssec.wisc.edu/api/v2")
+api_base_url = "https://sips.ssec.wisc.edu/api/v2"
 
 catalog = {
     "type": "FeatureCollection",
     "features": [],
     "items": [],
 }
-required_keys = {"product", "timerange", "satellite"}
-for item in doc.get("items", []):
-    if missing := required_keys - set(item.keys()).intersection(required_keys):
-        LOG.warning(
-            "item missing required keys, skipping: missing=%s, item=%s", missing, item
-        )
-        continue
-    url = (
-        f"{api_base_url}/files/search.json?"
-        f"products={item['product']}"
-        f"&timerange={item['timerange']}"
-        f"&satellite={item['satellite']}"
-    )
-    LOG.debug("%s", url)
-    resp = session.get(url, timeout=10)
-    resp.raise_for_status()
-    for file in resp.json().get("data", []):
-        catalog["items"].append(
-            {
-                "type": "Feature",
-                "stac_version": "1.0.0",
-                "id": file["name"],
-                "geometry": None,
-                "properties": {
-                    "datetime": file["begin_time"],
-                    "start_datetime": file["begin_time"],
-                    "end_datetime": file["end_time"],
-                    "checksum": file["checksum"],
-                },
-                "links": [],
-                "assets": [{"type": "data", "href": file["urls"]["public"]}],
-            }
-        )
 
-print(json.dumps(catalog, indent=2))
+url = (
+    f"{api_base_url}/files/search.json?"
+    f"products={args.product}"
+    f"&timerange={args.start:%Y-%m-%dT%H:%M:%SZ},{args.stop:%Y-%m-%dT%H:%M:%SZ}"
+    f"&satellite={args.satellite}"
+)
+LOG.debug("%s", url)
+resp = session.get(url, timeout=10)
+if not resp.ok:
+    print(resp.text, file=sys.stderr)
+resp.raise_for_status()
+
+items = []
+for file in resp.json().get("data", []):
+    items.append(
+        Item(
+            id=file["name"],
+            geometry=None,
+            bbox=None,
+            properties={
+                "checksum": file["checksum"],
+            },
+            datetime=parse_timestamp(file["begin_time"]),
+            start_datetime=parse_timestamp(file["begin_time"]),
+            end_datetime=parse_timestamp(file["end_time"]),
+            assets={"data": Asset(href=file["urls"]["public"])},
+        )
+    )
+collection = ItemCollection(items=items)
+print(json.dumps(collection.to_dict(), indent=2))
