@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+"""CLI Client for MDPS API operations.
+"""
+import argparse
+import json
+import logging
+import sys
+from datetime import datetime
+
+from pystac import Asset, Item, ItemCollection
+from unity_sds_client.resources.collection import Collection
+from unity_sds_client.resources.dataset import Dataset
+from unity_sds_client.services.data_service import DataService
+from unity_sds_client.unity import Unity, UnityEnvironments
+from unity_sds_client.unity_services import UnityServices
+
+LOG = logging.getLogger(__name__)
+
+
+def strftime(d: datetime) -> str:
+    return d.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+
+def strptime(s: str) -> datetime:
+    return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+
+def get_datasets(
+    service: DataService, start: datetime, end: datetime, collection_id: str
+) -> list[Dataset]:
+    LOG.debug("getting collection files for: %s", collection_id)
+    return service.get_collection_data(
+        Collection(collection_id),  # type: ignore
+        limit=100,
+        filter=f"start_datetime >= '{strftime(start)}' and end_datetime < '{strftime(end)}'",
+    )  # type: ignore
+
+
+def get_all_datasets(
+    unity: Unity, start: datetime, end: datetime, collections: list[str]
+) -> list[Dataset]:
+    data_service = unity.client(UnityServices.DATA_SERVICE)
+    assert isinstance(data_service, DataService)
+
+    datasets = []
+    for collection_id in collections:
+        for dataset in get_datasets(data_service, start, end, collection_id):
+            datasets.append(dataset)
+    return datasets
+
+
+def create_catalog(datasets: list[Dataset], required_roles: set[str]) -> ItemCollection:
+    items = []
+    for dataset in datasets:
+        # Generally, there should be a single datafile per dataset
+        for datafile in dataset.datafiles:
+            # Skip any files not having a role of interest
+            if not any(set(datafile.roles or []) & required_roles):
+                continue
+            items.append(
+                Item(
+                    id=dataset.id,
+                    geometry=dataset.geometry,
+                    bbox=dataset.bbox,
+                    datetime=strptime(dataset.data_begin_time),
+                    start_datetime=strptime(dataset.data_begin_time),
+                    end_datetime=strptime(dataset.data_end_time),
+                    # FIXME: silently ignoring case where roles overlap with other files
+                    assets={
+                        role_name: Asset(href=datafile.location)
+                        for role_name in datafile.roles
+                    },
+                    properties={},
+                )
+            )
+    return ItemCollection(items=items)
+
+
+def catalog_command(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+    unity: Unity,
+):
+    """Search for collection data files and output STAC collection JSON."""
+    args.roles = args.roles or ["data"]
+
+    output = sys.stdout if args.output == "-" else open(args.output, "wt")
+    datasets = get_all_datasets(unity, args.start, args.end, args.collection)
+    catalog = create_catalog(datasets, required_roles=set(args.roles))
+    json.dump(catalog.to_dict(), output, indent=2)
+
+
+if __name__ == "__main__":
+
+    def timestamp_arg(v: str) -> datetime:
+        for fmt in [
+            "%Y-%m-%dT%H:%M:%S.%fZ",
+            "%Y-%m-%dT%H:%M:%SZ",
+            "%Y-%m-%d",
+        ]:
+            try:
+                return datetime.strptime(v, fmt)
+            except (TypeError, ValueError):
+                pass
+        raise ValueError("Not a valid timestamp")
+
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "--env",
+        default="prod",
+        choices=["dev", "prod", "test"],
+        help="Unity environment",
+    )
+    parser.add_argument("--project", default="asips")
+    parser.add_argument(
+        "--venue",
+        default="int",
+        help="Venue short name, e.g., int = integration testing",
+    )
+
+    group = parser.add_subparsers()
+    catalog = group.add_parser(
+        "catalog",
+        description=catalog_command.__doc__,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    catalog.add_argument(
+        "-r",
+        "--roles",
+        action="append",
+        help="Limit output to data files with these roles",
+    )
+    catalog.add_argument(
+        "-o",
+        "--output",
+        default="-",
+        help="Where to output catalog JSON, defaults to stdout",
+    )
+    catalog.add_argument("start", type=timestamp_arg)
+    catalog.add_argument("end", type=timestamp_arg)
+    catalog.add_argument("collection", nargs="+", help="Unity collection id")
+    catalog.set_defaults(func=catalog_command)
+    args = parser.parse_args()
+
+    logging.basicConfig(format="%(message)s", level=logging.INFO)
+    LOG.setLevel(logging.DEBUG)
+
+    env = getattr(UnityEnvironments, args.env.upper())
+    unity = Unity(env)
+    unity.set_project(args.project)
+    unity.set_venue(args.venue)
+
+    args.func(parser, args, unity)

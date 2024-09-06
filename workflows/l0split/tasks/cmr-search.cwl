@@ -1,27 +1,24 @@
 # vim: ft=yaml:
 cwlVersion: v1.2
 class: CommandLineTool
-baseCommand: ["search"]
-stdout: collection.json
+baseCommand: ["unity_client", "search"]
+stdout: stdout.txt
 stderr: stderr.txt
 inputs:
-  token_file:
-    type: File
+  search_collections: 
+    type: array 
+    items: string
     inputBinding:
-      prefix: --token-file 
-  cmr_collection: 
-    type: string 
-    inputBinding:
-      prefix: --product
-  cmr_start_time: 
+      itemSeparator: " "
+  search_start_time: 
     type: string
     inputBinding:
       prefix: --start
-  cmr_stop_time: 
+  search_stop_time: 
     type: string
     inputBinding:
       prefix: --stop
-  cmr_satellite:
+  search_satellite:
     type: string
     inputBinding:
       prefix: --satellite

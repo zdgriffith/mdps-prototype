@@ -63,12 +63,6 @@ session.headers = {"x-api-token": get_token()}
 
 api_base_url = "https://sips.ssec.wisc.edu/api/v2"
 
-catalog = {
-    "type": "FeatureCollection",
-    "features": [],
-    "items": [],
-}
-
 url = (
     f"{api_base_url}/files/search.json?"
     f"products={args.product}"
