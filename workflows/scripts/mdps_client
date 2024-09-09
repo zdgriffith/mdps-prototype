@@ -42,9 +42,11 @@ def get_all_datasets(
     data_service = unity.client(UnityServices.DATA_SERVICE)
     assert isinstance(data_service, DataService)
 
+    LOG.debug("collections: %s", collections)
     datasets = []
     for collection_id in collections:
         for dataset in get_datasets(data_service, start, end, collection_id):
+            LOG.debug("collection: %s, dataset: %s", collection_id, dataset)
             datasets.append(dataset)
     return datasets
 
@@ -57,6 +59,7 @@ def create_catalog(datasets: list[Dataset], required_roles: set[str]) -> ItemCol
             # Skip any files not having a role of interest
             if not any(set(datafile.roles or []) & required_roles):
                 continue
+            LOG.debug("datafile: %s", datafile.location)
             items.append(
                 Item(
                     id=dataset.id,
@@ -65,9 +68,9 @@ def create_catalog(datasets: list[Dataset], required_roles: set[str]) -> ItemCol
                     datetime=strptime(dataset.data_begin_time),
                     start_datetime=strptime(dataset.data_begin_time),
                     end_datetime=strptime(dataset.data_end_time),
-                    # FIXME: silently ignoring case where roles overlap with other files
+                    # FIXME: Using role name as asset key. Not sure this is ok.
                     assets={
-                        role_name: Asset(href=datafile.location)
+                        role_name: Asset(href=datafile.location, roles=["data"])
                         for role_name in datafile.roles
                     },
                     properties={},
@@ -107,6 +110,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
+    parser.add_argument("--verbose", action="store_true")
     parser.add_argument(
         "--env",
         default="prod",
@@ -145,7 +149,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     logging.basicConfig(format="%(message)s", level=logging.INFO)
-    LOG.setLevel(logging.DEBUG)
+    LOG.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 
     env = getattr(UnityEnvironments, args.env.upper())
     unity = Unity(env)
