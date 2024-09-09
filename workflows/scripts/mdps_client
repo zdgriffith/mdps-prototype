@@ -54,28 +54,23 @@ def get_all_datasets(
 def create_catalog(datasets: list[Dataset], required_roles: set[str]) -> ItemCollection:
     items = []
     for dataset in datasets:
-        # Generally, there should be a single datafile per dataset
-        for datafile in dataset.datafiles:
-            # Skip any files not having a role of interest
-            if not any(set(datafile.roles or []) & required_roles):
-                continue
-            LOG.debug("datafile: %s", datafile.location)
-            items.append(
-                Item(
-                    id=dataset.id,
-                    geometry=dataset.geometry,
-                    bbox=dataset.bbox,
-                    datetime=strptime(dataset.data_begin_time),
-                    start_datetime=strptime(dataset.data_begin_time),
-                    end_datetime=strptime(dataset.data_end_time),
-                    # FIXME: Using role name as asset key. Not sure this is ok.
-                    assets={
-                        role_name: Asset(href=datafile.location, roles=["data"])
-                        for role_name in datafile.roles
-                    },
-                    properties={},
-                )
+        items.append(
+            Item(
+                id=dataset.id,
+                geometry=dataset.geometry,
+                bbox=dataset.bbox,
+                datetime=strptime(dataset.data_begin_time),
+                start_datetime=strptime(dataset.data_begin_time),
+                end_datetime=strptime(dataset.data_end_time),
+                # FIXME: Using role name as asset key. Not sure this is ok.
+                assets={
+                    f"data{i}": Asset(href=df.location, roles=df.roles)
+                    for i, df in enumerate(dataset.datafiles)
+                    if required_roles & set(df.roles)
+                },
+                properties={},
             )
+        )
     return ItemCollection(items=items)
 
 
