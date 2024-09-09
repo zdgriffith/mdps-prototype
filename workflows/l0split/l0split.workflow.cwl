@@ -7,7 +7,7 @@ requirements:
 
 inputs:
   stac_json: string
-  input_unity_dapa_client: 
+  unity_client_id: 
     type: string
     default: "40c2s0ulbhp9i0fmaph3su9jch"
 
@@ -21,8 +21,8 @@ steps:
   stage_in:
     run: "http://awslbdockstorestack-lb-1429770210.us-west-2.elb.amazonaws.com:9998/api/ga4gh/trs/v2/tools/%23workflow%2Fdockstore.org%2Fmike-gangl%2Funity-example-application/versions/8/PLAIN-CWL/descriptor/%2Fstage_in.cwl"
     in:
-      stac_json: cmr-step/results
-      input_unity_dapa_client: "40c2s0ulbhp9i0fmaph3su9jch"
+      stac_json: stac_json
+      unity_client_id: unity_client_id
     out: [results, outdir]
 
   process:
