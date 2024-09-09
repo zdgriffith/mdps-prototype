@@ -1,0 +1,23 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "stac_version": "1.0.0",
+      "id": "P1590826VIIRSSCIENCEAT19244050504901.PDS",
+      "properties": {
+        "start_datetime": "2019-09-01T00:00:00.745000Z",
+        "end_datetime": "2019-09-01T01:59:58.906000Z",
+        "datetime": "2019-09-01T00:00:00.745000Z"
+      },
+      "geometry": null,
+      "links": [],
+      "assets": {
+        "data": {
+          "href": "s3://asips-int-unity-data/urn:nasa:unity:asips:int:P1590826VIIRSSCIENCE-T___1/P1590826VIIRSSCIENCEAT19244050504901.PDS"
+        }
+      },
+      "stac_extensions": []
+    }
+  ]
+}
