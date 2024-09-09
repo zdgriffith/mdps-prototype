@@ -20,4 +20,3 @@ RUN python3.11 -m venv $APPDIR 
 ENV \
   VIRTUALENV=$APPDIR \
   PATH=$APPDIR/bin:$PATH
-
