@@ -1,7 +1,4 @@
-cmr_collection: P1590000-T
-cmr_start_time: 2024-08-01T00:00:00Z
-cmr_stop_time: 2024-08-01T02:00:00Z
-cmr_satellite: noaa20
-token_file:
+stac_json:
   class: File
-  path: /home/brucef/.config/asipscli.json
+  path: catalog.json
+

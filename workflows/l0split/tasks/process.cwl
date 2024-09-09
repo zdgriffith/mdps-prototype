@@ -1,19 +1,17 @@
 # vim: ft=yaml:
 cwlVersion: v1.2
 class: CommandLineTool
-baseCommand: ["level0split"]
+baseCommand: ["level0split", "--ouptut", "$(runtime.outdir)/catalog.json"]
 stdout: stdout.txt
 stderr: stderr.txt
+requirements:
+  DockerRequirement:
+    dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-prototype/l0split:latest
 inputs:
-  input: 
-    type: File 
+  input:
+    type: File
     inputBinding:
       position: 0
-  output: 
-    type: File 
-    default: "catalog.json"
-    inputBinding:
-      prefix: "--output"
 outputs:
   outdir:
     type: Directory
