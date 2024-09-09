@@ -1,4 +1,4 @@
-FROM gitlab.ssec.wisc.edu:5555/mdps-prototype/base
+FROM gitlab.ssec.wisc.edu:5555/sips/mdps-prototype/base
 
 RUN python3 -m pip install pystac 
 
