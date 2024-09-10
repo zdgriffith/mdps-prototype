@@ -69,8 +69,9 @@ def download(url: str, outdir: Path) -> Path:
     return Path(fpath)
 
 
-def geturl(item: Item) -> str | None:
-    assets = [a.href for k, a in item.assets.items() if k == "data"]
+def get_data_asset(item: Item) -> Asset | None:
+    """ Get urn for the first asset with "data" role"""
+    assets = [a for a in item.assets.values() if "data" in (a.roles or [])]
     return assets[0] if assets else None
 
 
@@ -102,13 +103,13 @@ catalog = Catalog(
 )
 errs: list[Item] = []
 for item in ItemCollection.from_file(args.input):
-    url = geturl(item)
-    if url is None:
-        LOG.warning("no url found for item, skipping: %s", item)
+    asset = get_data_asset(item)
+    if asset is None:
+        LOG.warning("no data asset found for item, skipping: %s", item)
         continue
     LOG.info("downloading %s", pformat(item))
     try:
-        fpath = download(url, args.outdir)
+        fpath = download(asset.href, args.outdir)
     except (IOError, ValueError, requests.HTTPError) as err:
         LOG.warning("failed %s: %s", err, item)
         errs.append(item)
@@ -124,10 +125,10 @@ for item in ItemCollection.from_file(args.input):
             datetime=parse_timestamp(item.properties["start_datetime"]),
             start_datetime=parse_timestamp(item.properties["start_datetime"]),
             end_datetime=parse_timestamp(item.properties["end_datetime"]),
-            assets={"data": Asset(href=fpath.name)},
+            assets={"data": Asset(href=fpath.name, roles=asset.roles)},
         ),
         strategy=layout.AsIsLayoutStrategy(),
     )
-    LOG.info("finished %s", url)
+    LOG.info("finished %s", asset.href)
 
 catalog.save()
