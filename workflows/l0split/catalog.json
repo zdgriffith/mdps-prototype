@@ -4,6 +4,27 @@
     {
       "type": "Feature",
       "stac_version": "1.0.0",
+      "id": "P1590826VIIRSSCIENCEAT19244050504901.PDS",
+      "properties": {
+        "start_datetime": "2019-09-01T00:00:00.745000Z",
+        "end_datetime": "2019-09-01T01:59:58.906000Z",
+        "datetime": "2019-09-01T00:00:00.745000Z"
+      },
+      "geometry": null,
+      "links": [],
+      "assets": {
+        "data2": {
+          "href": "s3://asips-int-unity-data/urn:nasa:unity:asips:int:P1590826VIIRSSCIENCE-T___1/P1590826VIIRSSCIENCEAT19244050504901.PDS",
+          "roles": [
+            "data"
+          ]
+        }
+      },
+      "stac_extensions": []
+    },
+    {
+      "type": "Feature",
+      "stac_version": "1.0.0",
       "id": "P1590000AAAAAAAAAAAAAT19244050140701.PDS",
       "properties": {
         "start_datetime": "2019-09-01T00:00:00.025000Z",
@@ -14,7 +35,7 @@
       "links": [],
       "assets": {
         "data0": {
-          "href": "https://sipsdev.ssec.wisc.edu/~steved/P1590000AAAAAAAAAAAAAT19244050140701.PDS",
+          "href": "s3://asips-int-unity-data/urn:nasa:unity:asips:int:P1590000-T___1/P1590000AAAAAAAAAAAAAT19244050140701.PDS",
           "roles": [
             "data"
           ]
@@ -35,7 +56,7 @@
       "links": [],
       "assets": {
         "data2": {
-          "href": "https://sipsdev.ssec.wisc.edu/~steved/P1590008AAAAAAAAAAAAAT19244050215301.PDS",
+          "href": "s3://asips-int-unity-data/urn:nasa:unity:asips:int:P1590008-T___1/P1590008AAAAAAAAAAAAAT19244050215301.PDS",
           "roles": [
             "data"
           ]
@@ -56,28 +77,7 @@
       "links": [],
       "assets": {
         "data2": {
-          "href": "https://sipsdev.ssec.wisc.edu/~steved/P1590011AAAAAAAAAAAAAT19244050230601.PDS",
-          "roles": [
-            "data"
-          ]
-        }
-      },
-      "stac_extensions": []
-    },
-    {
-      "type": "Feature",
-      "stac_version": "1.0.0",
-      "id": "P1590826VIIRSSCIENCEAT19244050504901.PDS",
-      "properties": {
-        "start_datetime": "2019-09-01T00:00:00.745000Z",
-        "end_datetime": "2019-09-01T01:59:58.906000Z",
-        "datetime": "2019-09-01T00:00:00.745000Z"
-      },
-      "geometry": null,
-      "links": [],
-      "assets": {
-        "data2": {
-          "href": "https://sipsdev.ssec.wisc.edu/~steved/P1590826VIIRSSCIENCEAT19244050504901.PDS",
+          "href": "s3://asips-int-unity-data/urn:nasa:unity:asips:int:P1590011-T___1/P1590011AAAAAAAAAAAAAT19244050230601.PDS",
           "roles": [
             "data"
           ]
