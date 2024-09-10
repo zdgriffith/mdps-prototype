@@ -40,8 +40,7 @@ steps:
   process:
     run: tasks/process.cwl
     in:
-      input: stage_in/stage_in_collection_file
-      indir: stage_in/stage_in_download_dir
+      input: stage_in/stage_in_download_dir
     out: [outdir]
 
 
