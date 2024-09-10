@@ -84,27 +84,33 @@ def gather_inputs(fpath: Path, roles: list[str]) -> list[Path]:
     Assumes the asset hrefs are local.
     """
     output_paths = []
-    catalog = Catalog.from_file(fpath)
-    LOG.info(f"Catalog ID: {catalog.id}")
-    avail_items = catalog.get_collections()
+    data = json.load(fpath.open())
+    if data.get("type", "") == "FeatureCollection":
+        avail_items = ItemCollection.from_dict(data).items
+    else:
+        avail_items = Catalog.from_dict(data).get_items(recursive=True)
     LOG.info("%s catalog items", len(avail_items))  # type: ignore
     for item in avail_items:
-        for role, asset in item.assets.items():
-            if role not in roles:
+        LOG.debug(item)
+        for asset in item.assets.values():
+            if not set(asset.roles or []) & set(roles):
                 LOG.debug(
                     "skipping item %s asset role %s href %s",
                     item.id,
-                    role,
+                    asset.roles,
                     asset.href,
                 )
                 continue
-            path = Path(asset.href)
+            if asset.href.startswith("/"):
+                path = Path(asset.href)
+            else:
+                path = fpath.parent / Path(asset.href).name
             if not path.exists():
                 LOG.warning(
                     "Item %s asset role %s href %s does not exist locally",
                     item.id,
-                    role,
-                    asset.href,
+                    asset.roles,
+                    path,
                 )
                 continue
             output_paths.append(path)
@@ -136,14 +142,16 @@ def write_catalog(outputs: list[Path], dest: Path):
 def main(catalog: Path, roles: list[str], dest: Path):
     outputs = []
     for fpath in gather_inputs(catalog, roles=roles):
+        LOG.info("splitting %s", fpath)
         outputs += split_one(fpath)
 
-    output_catalog = write_catalog(outputs, dest=dest)
-    LOG.info("Wrote catalog %s", output_catalog)
+    write_catalog(outputs, dest=dest)
+    LOG.info("Wrote catalog %s", dest)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--verbose", action="store_true")
     parser.add_argument(
         "input",
         type=Path,
@@ -158,7 +166,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(message)s")
 
     if not args.input.exists():
         parser.error(f"input {args.input} does not exist")

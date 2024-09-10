@@ -1,7 +1,7 @@
 # vim: ft=yaml:
 cwlVersion: v1.2
 class: CommandLineTool
-baseCommand: ["level0split", "-o", "$(runtime.outdir)/catalog.json"]
+baseCommand: ["level0split", "--verbose", "-o", "catalog-output.json"]
 stdout: stdout.txt
 stderr: stderr.txt
 requirements:
@@ -12,6 +12,8 @@ inputs:
     type: File
     inputBinding:
       position: 0
+  indir:
+    type: Directory
 outputs:
   outdir:
     type: Directory

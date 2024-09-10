@@ -4,6 +4,8 @@ class: Workflow
 
 requirements:
   SubworkflowFeatureRequirement: {}
+  NetworkAccess:
+    networkAccess: true
 
 inputs:
   stac_json:
@@ -12,7 +14,7 @@ inputs:
       - File
   download_type:
     type: string
-    default: "S3"
+    default: "HTTP"
   unity_client_id:
     type: string
     default: "40c2s0ulbhp9i0fmaph3su9jch"
@@ -21,6 +23,9 @@ outputs:
   outdir:
     type: Directory
     outputSource: process/outdir
+  outdir2:
+    type: Directory
+    outputSource: stage_in/stage_in_download_dir
 
 steps:
 
@@ -36,6 +41,7 @@ steps:
     run: tasks/process.cwl
     in:
       input: stage_in/stage_in_collection_file
+      indir: stage_in/stage_in_download_dir
     out: [outdir]
 
 
