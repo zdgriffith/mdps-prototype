@@ -25,8 +25,8 @@ def run(cmd, **kwds) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, **kwds)
 
 
-def get_dest(fpath: Path, dt: datetime) -> Path:
-    return args.outdir / f"{fpath.name[:22]}{dt:%y%j%H%M%S}{fpath.name[-7:]}"
+def get_dest(fpath: Path, dt: datetime, dest: Path) -> Path:
+    return dest / f"{fpath.name[:22]}{dt:%y%j%H%M%S}{fpath.name[-7:]}"
 
 
 def get_times(fpath: Path) -> tuple[datetime, datetime]:
@@ -52,14 +52,14 @@ def get_times(fpath: Path) -> tuple[datetime, datetime]:
     )
 
 
-def split_one(fpath: Path) -> list[Path]:
+def split_one(fpath: Path, dest: Path) -> list[Path]:
     outputs = []
     start, _end = get_times(fpath)
     LOG.info("splitting file %s for time %s", fpath.name, start)
     for i in range(20):
         gran_start = start + timedelta(minutes=i * 6)
         gran_end = gran_start + timedelta(minutes=6)
-        destpath = get_dest(fpath, gran_start)
+        destpath = get_dest(fpath, gran_start, dest)
         cmd = [
             "ccsds",
             "filter",
@@ -67,9 +67,9 @@ def split_one(fpath: Path) -> list[Path]:
             "-o",
             str(destpath),
             "--before",
-            gran_start.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            (gran_start-timedelta(seconds=10)).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "--after",
-            gran_end.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            (gran_end+timedelta(seconds=10)).strftime("%Y-%m-%dT%H:%M:%SZ"),
             str(fpath),
         ]
         run(cmd)
@@ -132,18 +132,19 @@ def write_catalog(outputs: list[Path], dest: Path):
                 datetime=dt,
                 start_datetime=dt,
                 end_datetime=dt + timedelta(minutes=6),
-                assets={"data": Asset(href=str(fname))},
+                assets={"data": Asset(href=str(fname), roles=["data"])},
             )
         )
     collection = ItemCollection(items=items)
-    json.dump(collection.to_dict(), open(dest, "wt"), indent=2)
+    json.dump(collection.to_dict(), open(dest / "output.json", "wt"), indent=2)
 
 
-def main(catalog: Path, roles: list[str], dest: Path):
+def main(indir: Path, roles: list[str], dest: Path):
     outputs = []
+    catalog = indir / "stage-in-results.json"
     for fpath in gather_inputs(catalog, roles=roles):
         LOG.info("splitting %s", fpath)
-        outputs += split_one(fpath)
+        outputs += split_one(fpath, dest)
 
     write_catalog(outputs, dest=dest)
     LOG.info("Wrote catalog %s", dest)
@@ -161,7 +162,7 @@ if __name__ == "__main__":
         "-o",
         "--output",
         type=Path,
-        default=Path("catalog.json"),
+        default=Path("."),
         help="directory to save outputs to",
     )
     args = parser.parse_args()
