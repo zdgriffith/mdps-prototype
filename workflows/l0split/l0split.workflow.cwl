@@ -4,38 +4,44 @@ class: Workflow
 
 requirements:
   SubworkflowFeatureRequirement: {}
+  NetworkAccess:
+    networkAccess: true
 
 inputs:
-  # Inputs for searching Unity catalog
-  search_collection: string
-  search_begin_time: string 
-  search_end_time: string
+  stac_json:
+    type:
+      - string
+      - File
+  download_type:
+    type: string
+    default: "HTTP"
+  unity_client_id:
+    type: string
+    default: "40c2s0ulbhp9i0fmaph3su9jch"
 
 outputs:
   outdir:
-    type: Directory 
+    type: Directory
     outputSource: process/outdir
+  outdir2:
+    type: Directory
+    outputSource: stage_in/stage_in_download_dir
 
 steps:
-  catalog:
-    run: tasks/cmr-search.cwl
-    in:
-      token_file: token_file
-      search_collection: search_collection
-      search_start_time: search_start_time
-      search_stop_time: search_stop_time 
-    out: [results]
 
   stage_in:
     run: "http://awslbdockstorestack-lb-1429770210.us-west-2.elb.amazonaws.com:9998/api/ga4gh/trs/v2/tools/%23workflow%2Fdockstore.org%2Fmike-gangl%2Funity-example-application/versions/8/PLAIN-CWL/descriptor/%2Fstage_in.cwl"
     in:
-      stac_json: cmr-step/results
-    out: [results, outdir]
+      download_type: download_type
+      stac_json: stac_json
+      unity_client_id: unity_client_id
+    out: [stage_in_collection_file, stage_in_download_dir]
 
   process:
     run: tasks/process.cwl
     in:
-      indir: stage_in/outdir
+      input: stage_in/stage_in_collection_file
+      indir: stage_in/stage_in_download_dir
     out: [outdir]
 
 

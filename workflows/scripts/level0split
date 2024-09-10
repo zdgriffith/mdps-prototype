@@ -7,25 +7,15 @@ import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from pystac import Asset, Catalog, Item, ItemCollection
+
 LOG = logging
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--outdir", type=Path, default=Path("outputs"), help="directory to save outputs to"
-)
-parser.add_argument(
-    "--output",
-    type=Path,
-    default="output.json",
-)
-parser.add_argument("indir", type=Path)
-args = parser.parse_args()
 
-logging.basicConfig(level=logging.INFO, format="%(message)s")
-
-if not args.indir.is_dir():
-    parser.error(f"indir {args.indir} does not exist")
-args.outdir.mkdir(exist_ok=True, mode=0o775)
+def parse_timestamp(fname: str) -> datetime:
+    # P1590011AAAAAAAAAAAAAT19245030010901.PDS
+    s = fname.split("T")[-1]
+    return datetime.strptime(s[:11], "%y%j%H%M%S")
 
 
 def run(cmd, **kwds) -> subprocess.CompletedProcess:
@@ -62,9 +52,9 @@ def get_times(fpath: Path) -> tuple[datetime, datetime]:
     )
 
 
-outputs = {"items": []}
-for fpath in args.indir.glob("*.PDS"):
-    start, end = get_times(fpath)
+def split_one(fpath: Path) -> list[Path]:
+    outputs = []
+    start, _end = get_times(fpath)
     LOG.info("splitting file %s for time %s", fpath.name, start)
     for i in range(20):
         gran_start = start + timedelta(minutes=i * 6)
@@ -83,6 +73,102 @@ for fpath in args.indir.glob("*.PDS"):
             str(fpath),
         ]
         run(cmd)
-        outputs["items"].append(str(destpath))
+        outputs.append(destpath)
 
-json.dump(outputs, open(args.output, "wt"), indent=2)
+    return outputs
+
+
+def gather_inputs(fpath: Path, roles: list[str]) -> list[Path]:
+    """Gather input file paths from STAC catalog inputs.
+
+    Assumes the asset hrefs are local.
+    """
+    output_paths = []
+    data = json.load(fpath.open())
+    if data.get("type", "") == "FeatureCollection":
+        avail_items = ItemCollection.from_dict(data).items
+    else:
+        avail_items = Catalog.from_dict(data).get_items(recursive=True)
+    LOG.info("%s catalog items", len(avail_items))  # type: ignore
+    for item in avail_items:
+        LOG.debug(item)
+        for asset in item.assets.values():
+            if not set(asset.roles or []) & set(roles):
+                LOG.debug(
+                    "skipping item %s asset role %s href %s",
+                    item.id,
+                    asset.roles,
+                    asset.href,
+                )
+                continue
+            if asset.href.startswith("/"):
+                path = Path(asset.href)
+            else:
+                path = fpath.parent / Path(asset.href).name
+            if not path.exists():
+                LOG.warning(
+                    "Item %s asset role %s href %s does not exist locally",
+                    item.id,
+                    asset.roles,
+                    path,
+                )
+                continue
+            output_paths.append(path)
+    return output_paths
+
+
+def write_catalog(outputs: list[Path], dest: Path):
+    """Write a STAC FeatureCollection for our putputs."""
+    items = []
+    for fpath in outputs:
+        fname = fpath.name
+        dt = parse_timestamp(fname)
+        items.append(
+            Item(
+                id=fpath.name,
+                geometry=None,
+                bbox=None,
+                properties={},
+                datetime=dt,
+                start_datetime=dt,
+                end_datetime=dt + timedelta(minutes=6),
+                assets={"data": Asset(href=str(fname))},
+            )
+        )
+    collection = ItemCollection(items=items)
+    json.dump(collection.to_dict(), open(dest, "wt"), indent=2)
+
+
+def main(catalog: Path, roles: list[str], dest: Path):
+    outputs = []
+    for fpath in gather_inputs(catalog, roles=roles):
+        LOG.info("splitting %s", fpath)
+        outputs += split_one(fpath)
+
+    write_catalog(outputs, dest=dest)
+    LOG.info("Wrote catalog %s", dest)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--verbose", action="store_true")
+    parser.add_argument(
+        "input",
+        type=Path,
+        help="Path to STAC feature collection containing all relavent inputs",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        default=Path("catalog.json"),
+        help="directory to save outputs to",
+    )
+    args = parser.parse_args()
+
+    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(message)s")
+
+    if not args.input.exists():
+        parser.error(f"input {args.input} does not exist")
+
+    main(args.input, roles=["data"], dest=args.output)
