@@ -6,7 +6,7 @@ stdout: stdout.txt
 stderr: stderr.txt
 requirements:
   DockerRequirement:
-    dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-prototype/l0split:latest
+    dockerPull: 195353574769.dkr.ecr.us-west-2.amazonaws.com/test-asips-docker:8f5727d
 inputs:
   input:
     type: Directory
