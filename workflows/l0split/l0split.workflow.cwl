@@ -14,7 +14,7 @@ inputs:
       - File
   download_type:
     type: string
-    default: "HTTP"
+    default: "S3"
   unity_client_id:
     type: string
     default: "40c2s0ulbhp9i0fmaph3su9jch"
