@@ -6,7 +6,7 @@ stdout: stdout.txt
 stderr: stderr.txt
 requirements:
   DockerRequirement:
-    dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-images/l0split:787ad6b
+    dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-images/l0split:e7f36b3
 inputs:
   input:
     type: Directory
