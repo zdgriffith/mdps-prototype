@@ -136,7 +136,7 @@ def write_catalog(outputs: list[Path], dest: Path):
             )
         )
     collection = ItemCollection(items=items)
-    json.dump(collection.to_dict(), open(dest / "output.json", "wt"), indent=2)
+    json.dump(collection.to_dict(), open(dest / "catalog.json", "wt"), indent=2)
 
 
 def main(indir: Path, roles: list[str], dest: Path):
