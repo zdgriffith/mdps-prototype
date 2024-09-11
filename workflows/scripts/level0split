@@ -26,7 +26,7 @@ def run(cmd, **kwds) -> subprocess.CompletedProcess:
 
 
 def get_dest(fpath: Path, dt: datetime, dest: Path) -> Path:
-    return dest / f"{fpath.name[:22]}{dt:%y%j%H%M%S}{fpath.name[-7:]}"
+    return dest / f"{fpath.name[:20]}6T{dt:%y%j%H%M%S}{fpath.name[-7:]}"
 
 
 def get_times(fpath: Path) -> tuple[datetime, datetime]:
