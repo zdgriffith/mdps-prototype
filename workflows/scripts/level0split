@@ -7,7 +7,7 @@ import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from pystac import Asset, Catalog, Item, ItemCollection
+from pystac import Asset, Catalog, CatalogType, Item, ItemCollection
 
 LOG = logging
 
@@ -67,9 +67,9 @@ def split_one(fpath: Path, dest: Path) -> list[Path]:
             "-o",
             str(destpath),
             "--before",
-            (gran_start-timedelta(seconds=10)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            (gran_start - timedelta(seconds=10)).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "--after",
-            (gran_end+timedelta(seconds=10)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            (gran_end + timedelta(seconds=10)).strftime("%Y-%m-%dT%H:%M:%SZ"),
             str(fpath),
         ]
         run(cmd)
@@ -117,37 +117,36 @@ def gather_inputs(fpath: Path, roles: list[str]) -> list[Path]:
     return output_paths
 
 
-def write_catalog(outputs: list[Path], dest: Path):
+def write_catalog(outputs: list[Path], destdir: Path):
     """Write a STAC FeatureCollection for our putputs."""
-    items = []
+    catalog = Catalog("level0split", "level0split outputs")
     for fpath in outputs:
         fname = fpath.name
         dt = parse_timestamp(fname)
-        items.append(
-            Item(
-                id=fpath.name,
-                geometry=None,
-                bbox=None,
-                properties={},
-                datetime=dt,
-                start_datetime=dt,
-                end_datetime=dt + timedelta(minutes=6),
-                assets={"data": Asset(href=str(fname), roles=["data"])},
-            )
+        item = Item(
+            id=fpath.name,
+            geometry=None,
+            bbox=None,
+            properties={},
+            datetime=dt,
+            start_datetime=dt,
+            end_datetime=dt + timedelta(minutes=6),
+            assets={"data": Asset(href=str(fpath.absolute()), roles=["data"])},
         )
-    collection = ItemCollection(items=items)
-    json.dump(collection.to_dict(), open(dest / "catalog.json", "wt"), indent=2)
+        catalog.add_item(item)
+    catalog.normalize_hrefs(str(destdir))
+    catalog.save()
 
 
-def main(indir: Path, roles: list[str], dest: Path):
+def main(indir: Path, roles: list[str], destdir: Path):
     outputs = []
     catalog = indir / "stage-in-results.json"
     for fpath in gather_inputs(catalog, roles=roles):
         LOG.info("splitting %s", fpath)
-        outputs += split_one(fpath, dest)
+        outputs += split_one(fpath, destdir)
 
-    write_catalog(outputs, dest=dest)
-    LOG.info("Wrote catalog %s", dest)
+    write_catalog(outputs, destdir)
+    LOG.info("Wrote catalog to %s", destdir)
 
 
 if __name__ == "__main__":
@@ -167,9 +166,11 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(message)s")
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO, format="%(message)s"
+    )
 
     if not args.input.exists():
         parser.error(f"input {args.input} does not exist")
 
-    main(args.input, roles=["data"], dest=args.output)
+    main(args.input, roles=["data"], destdir=args.output)
