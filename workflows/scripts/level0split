@@ -124,7 +124,7 @@ def write_catalog(outputs: list[Path], destdir: Path):
         fname = fpath.name
         dt = parse_timestamp(fname)
         item = Item(
-            id=fpath.name,
+            id=fpath.name.rsplit(".", 1)[0],
             geometry=None,
             bbox=None,
             properties={},
@@ -135,7 +135,8 @@ def write_catalog(outputs: list[Path], destdir: Path):
         )
         catalog.add_item(item)
     catalog.normalize_hrefs(str(destdir))
-    catalog.save()
+    catalog.make_all_asset_hrefs_relative()
+    catalog.save(catalog_type=CatalogType.SELF_CONTAINED)
 
 
 def main(indir: Path, roles: list[str], destdir: Path):
