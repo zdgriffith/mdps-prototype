@@ -139,9 +139,9 @@ def write_catalog(outputs: list[Path], destdir: Path):
     catalog.save(catalog_type=CatalogType.SELF_CONTAINED)
 
 
-def main(indir: Path, roles: list[str], destdir: Path):
+def main(indir: Path, catalog_name: str, roles: list[str], destdir: Path):
     outputs = []
-    catalog = indir / "stage-in-results.json"
+    catalog = indir / catalog_name
     for fpath in gather_inputs(catalog, roles=roles):
         LOG.info("splitting %s", fpath)
         outputs += split_one(fpath, destdir)
@@ -153,6 +153,13 @@ def main(indir: Path, roles: list[str], destdir: Path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", action="store_true")
+    parser.add_argument(
+        "-c",
+        "--catalog-name",
+        # default="catalog.json",
+        default="stage-in-results.json",
+        help="Name of catalog/collection file in input dir",
+    )
     parser.add_argument(
         "input",
         type=Path,
@@ -174,4 +181,4 @@ if __name__ == "__main__":
     if not args.input.exists():
         parser.error(f"input {args.input} does not exist")
 
-    main(args.input, roles=["data"], destdir=args.output)
+    main(args.input, args.catalog_name, roles=["data"], destdir=args.output)
