@@ -6,6 +6,7 @@ requirements:
   SubworkflowFeatureRequirement: {}
   NetworkAccess:
     networkAccess: true
+  StepInputExpressionRequirement: {}
 
 inputs:
   stac_json:
