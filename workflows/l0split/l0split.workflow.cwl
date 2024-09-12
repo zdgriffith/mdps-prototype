@@ -44,5 +44,7 @@ steps:
     run: "http://awslbdockstorestack-lb-1429770210.us-west-2.elb.amazonaws.com:9998/api/ga4gh/trs/v2/tools/%23workflow%2Fdockstore.org%2Fmike-gangl%2Funity-example-application/versions/8/PLAIN-CWL/descriptor/%2Fstage_out.cwl"
     in:
       output_dir: process/outdir
+      staging_bucket:
+        valueFrom: "asips-int-unity-data"
     out: [failed_features, stage_out_results, successful_features]
 
