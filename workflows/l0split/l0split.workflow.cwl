@@ -48,6 +48,6 @@ steps:
       staging_bucket:
         valueFrom: "asips-int-unity-data"
       collection_id:
-        valueFrom: "P1590011-6T___1"
+        valueFrom: "urn:nasa:unity:asips:int:P1590011-6T___1"
     out: [failed_features, stage_out_results, successful_features]
 
