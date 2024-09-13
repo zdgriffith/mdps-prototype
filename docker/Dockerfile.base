@@ -16,7 +16,10 @@ RUN dnf -yqq install epel-release && \
 
 ENV \
   APPDIR=/opt/mdps-prototype
-RUN python3.11 -m venv $APPDIR 
+RUN python3.11 -m venv $APPDIR
 ENV \
   VIRTUALENV=$APPDIR \
   PATH=$APPDIR/bin:$PATH
+COPY docker/requirements.txt /tmp/
+COPY scripts/catgen /usr/local/bin/
+RUN $APPDIR/bin/python3 -m pip install -r /tmp/requirements.txt

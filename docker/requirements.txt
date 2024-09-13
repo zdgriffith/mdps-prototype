@@ -1,0 +1,4 @@
+-i http://devpi.sips/sips/prod/+simple
+--trusted-host devpi.sips
+fnmeta
+pystac
