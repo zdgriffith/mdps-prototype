@@ -148,6 +148,7 @@ def main(indir: Path, catalog_name: str, roles: list[str], destdir: Path):
 
     write_catalog(outputs, destdir)
     LOG.info("Wrote catalog to %s", destdir)
+    run(["ls", "-l"])
 
 
 if __name__ == "__main__":

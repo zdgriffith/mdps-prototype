@@ -6,6 +6,7 @@ requirements:
   SubworkflowFeatureRequirement: {}
   NetworkAccess:
     networkAccess: true
+  StepInputExpressionRequirement: {}
 
 inputs:
   stac_json:
@@ -21,11 +22,8 @@ inputs:
 
 outputs:
   outdir:
-    type: Directory
-    outputSource: process/outdir
-  outdir2:
-    type: Directory
-    outputSource: stage_in/stage_in_download_dir
+    type: File
+    outputSource: stage_out/stage_out_results
 
 steps:
 
@@ -43,4 +41,13 @@ steps:
       input: stage_in/stage_in_download_dir
     out: [outdir]
 
+  stage_out:
+    run: "http://awslbdockstorestack-lb-1429770210.us-west-2.elb.amazonaws.com:9998/api/ga4gh/trs/v2/tools/%23workflow%2Fdockstore.org%2Fmike-gangl%2Funity-example-application/versions/8/PLAIN-CWL/descriptor/%2Fstage_out.cwl"
+    in:
+      output_dir: process/outdir
+      staging_bucket:
+        valueFrom: "asips-int-unity-data"
+      collection_id:
+        valueFrom: "urn:nasa:unity:asips:int:P1590011-6T___1"
+    out: [failed_features, stage_out_results, successful_features]
 

@@ -2,11 +2,9 @@
 cwlVersion: v1.2
 class: CommandLineTool
 baseCommand: ["level0split", "--verbose"]
-stdout: stdout.txt
-stderr: stderr.txt
 requirements:
   DockerRequirement:
-    dockerPull: 195353574769.dkr.ecr.us-west-2.amazonaws.com/test-asips-docker:8f5727d
+    dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-images/l0split:2e5a088
 inputs:
   input:
     type: Directory
