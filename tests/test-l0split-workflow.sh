@@ -24,7 +24,9 @@ cp -r ../workflows/l0split workflows/
 sed -i s",    dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-images/l0split:.*,    dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-images/l0split:$USER," workflows/l0split/tasks/process.cwl
 
 # copy over the catalog.json but remove item0 which isn the 0826SCIENCE file
-cat ../workflows/l0split/catalog.json | jq "del(.features[0])" > workflows/l0split/catalog.json
+# cat ../workflows/l0split/catalog.json | jq "del(.features[0])" > workflows/l0split/catalog.json
+# (disabled for now since i've pared down the catalog to only contain the APID 11 input - gregq)
+cat ../workflows/l0split/catalog.json > workflows/l0split/catalog.json
 
 # additionally change the links to http urls
 sed -i "s,s3://.*__1,https://sipsdev.ssec.wisc.edu/~steved," workflows/l0split/catalog.json
