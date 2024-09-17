@@ -64,8 +64,8 @@ def generate_catalog(
                 LOG.exception("failed to create or add item for %s", fpath.name)
                 continue
         catalog.add_child(subcat)
+
     catalog.normalize_hrefs(str(basedir))
-    catalog.make_all_asset_hrefs_relative()
     catalog.save(catalog_type=CatalogType.SELF_CONTAINED)
 
     if include_metadata_for_mdps:
@@ -77,9 +77,9 @@ def generate_catalog(
             LOG.debug("adding metadata %s", meta_path)
             item.add_asset("metadata", Asset(href=str(meta_path), roles=["metadata"]))
 
-        catalog.normalize_hrefs(str(basedir))
-        catalog.make_all_asset_hrefs_relative()
-        catalog.save(catalog_type=CatalogType.SELF_CONTAINED)
+    catalog.normalize_hrefs(str(basedir.absolute()))
+    catalog.make_all_asset_hrefs_relative()
+    catalog.save(catalog_type=CatalogType.SELF_CONTAINED)
 
     return catalog
 

@@ -7,7 +7,7 @@ import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from pystac import Asset, Catalog, CatalogType, Item, ItemCollection
+from pystac import Catalog, ItemCollection
 
 LOG = logging
 
@@ -117,38 +117,24 @@ def gather_inputs(fpath: Path, roles: list[str]) -> list[Path]:
     return output_paths
 
 
-def write_catalog(outputs: list[Path], destdir: Path):
-    """Write a STAC FeatureCollection for our putputs."""
-    catalog = Catalog("level0split", "level0split outputs")
-    for fpath in outputs:
-        fname = fpath.name
-        dt = parse_timestamp(fname)
-        item = Item(
-            id=fpath.name.rsplit(".", 1)[0],
-            geometry=None,
-            bbox=None,
-            properties={},
-            datetime=dt,
-            start_datetime=dt,
-            end_datetime=dt + timedelta(minutes=6),
-            assets={"data": Asset(href=str(fpath.absolute()), roles=["data"])},
-        )
-        catalog.add_item(item)
-    catalog.normalize_hrefs(str(destdir))
-    catalog.make_all_asset_hrefs_relative()
-    catalog.save(catalog_type=CatalogType.SELF_CONTAINED)
-
-
 def main(indir: Path, catalog_name: str, roles: list[str], destdir: Path):
     outputs = []
     catalog = indir / catalog_name
     for fpath in gather_inputs(catalog, roles=roles):
         LOG.info("splitting %s", fpath)
         outputs += split_one(fpath, destdir)
+        for output in outputs:
+            LOG.info("produced %s", output)
 
-    write_catalog(outputs, destdir)
-    LOG.info("Wrote catalog to %s", destdir)
-    run(["ls", "-l"])
+    run(
+        [
+            "catgen",
+            "--verbose",
+            "--include-metadata-for-mdps",
+            f"--file-pattern={destdir}/*.PDS",
+        ],
+        check=True,
+    )
 
 
 if __name__ == "__main__":

@@ -2,9 +2,11 @@
 cwlVersion: v1.2
 class: CommandLineTool
 baseCommand: ["level0split", "--verbose"]
+stdout: stdout.txt
+stderr: stderr.txt
 requirements:
   DockerRequirement:
-    dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-images/l0split:2e5a088
+    dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-images/l0split
 inputs:
   input:
     type: Directory
