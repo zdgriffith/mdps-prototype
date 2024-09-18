@@ -7,32 +7,25 @@ scriptdir=$(realpath $(dirname $0))
 ./docker/build.sh
 
 # remove any results from previous run
-rm -fr tests/*
+rm -fr tmp/
 
-# make a tmpdir to use
-mkdir -p tests/tmp
-export TMPDIR=tests/tmp
+# TMPDIR is used for running stages of our workflow
+mkdir -p tmp/workdir
+export TMPDIR=tmp/workdir
 
-# sync over the workflow we want to test
-rsync -av workflows/ tests/workflows/
+# sync over the l0split workflow such that we can modify it to use local files
+mkdir tmp/workflow
+rsync -av workflows/l0split tmp/workflows/
 
-# edit the docker image to be our USER one for testing
-# find tests -name \*.cwl | xargs -IXX sed -i "s,l0split:.*$,l0split:$USER,g" XX
-
-# copy over the catalog.json but remove item0 which isn the 0826SCIENCE file
-# cat ../workflows/l0split/catalog.json | jq "del(.features[0])" > workflows/l0split/catalog.json
-# (disabled for now since i've pared down the catalog to only contain the APID 11 input - gregq)
-cp -v workflows/l0split/catalog.json tests/workflows/l0split/catalog.json
-
-# additionally change the links to http urls
-sed -i "s,s3://.*__1,https://sipsdev.ssec.wisc.edu/~steved," tests/workflows/l0split/catalog.json
+# edit the unity S3 urls to be local HTTPS urls
+sed -i "s,s3://.*__1,https://sipsdev.ssec.wisc.edu/~steved," tmp/workflows/l0split/catalog.json
 
 # also need to specify HTTP on our inputs.yaml
-echo "download_type: HTTP" >>tests/workflows/l0split/l0split.inputs.yaml
+echo "download_type: HTTP" >>tmp/workflows/l0split/l0split.inputs.yaml
 
 time cwltool \
-  --outdir=tests/outputs/ \
-  --log-dir=tests/logs/ \
+  --outdir=tmp/outputs/ \
+  --log-dir=tmp/logs/ \
   --no-warning \
-  tests/workflows/l0split/l0split.workflow.cwl \
-  tests/workflows/l0split/l0split.inputs.yaml |& tee tests/log
+  tmp/workflows/l0split/l0split.workflow.cwl \
+  tmp/workflows/l0split/l0split.inputs.yaml |& tee tmp/log
