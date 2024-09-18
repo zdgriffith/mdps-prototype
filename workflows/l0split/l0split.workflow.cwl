@@ -19,6 +19,7 @@ inputs:
   unity_client_id:
     type: string
     default: "40c2s0ulbhp9i0fmaph3su9jch"
+  collection_id: string
 
 outputs:
   datadir:
@@ -45,6 +46,7 @@ steps:
     run: tasks/process.cwl
     in:
       input: stage_in/stage_in_download_dir
+      collection_id: collection_id
     out: [outdir]
 
   # catgen:
@@ -63,6 +65,5 @@ steps:
         valueFrom: "stage_out"
       staging_bucket:
         valueFrom: "asips-int-unity-data"
-      collection_id:
-        valueFrom: "urn:nasa:unity:asips:int:P1590011-6T___1"
+      collection_id: collection_id
     out: [failed_features, stage_out_results, successful_features]

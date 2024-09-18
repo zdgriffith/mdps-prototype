@@ -117,7 +117,9 @@ def gather_inputs(fpath: Path, roles: list[str]) -> list[Path]:
     return output_paths
 
 
-def main(indir: Path, catalog_name: str, roles: list[str], destdir: Path):
+def main(
+    collection_id: str, indir: Path, catalog_name: str, roles: list[str], destdir: Path
+):
     outputs = []
     catalog = indir / catalog_name
     for fpath in gather_inputs(catalog, roles=roles):
@@ -130,8 +132,8 @@ def main(indir: Path, catalog_name: str, roles: list[str], destdir: Path):
         [
             "catgen",
             "--verbose",
-            "--include-metadata-for-mdps",
-            f"--file-pattern={destdir}/*.PDS",
+            collection_id,
+            f"{destdir}/*.PDS",
         ],
         check=True,
     )
@@ -159,6 +161,7 @@ if __name__ == "__main__":
         default=Path("."),
         help="directory to save outputs to",
     )
+    parser.add_argument("collection_id")
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -168,4 +171,10 @@ if __name__ == "__main__":
     if not args.input.exists():
         parser.error(f"input {args.input} does not exist")
 
-    main(args.input, args.catalog_name, roles=["data"], destdir=args.output)
+    main(
+        args.collection_id,
+        args.input,
+        args.catalog_name,
+        roles=["data"],
+        destdir=args.output,
+    )

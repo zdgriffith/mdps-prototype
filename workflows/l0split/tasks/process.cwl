@@ -12,6 +12,10 @@ inputs:
     type: Directory
     inputBinding:
       position: 0
+  collection_id:
+    type: string
+    inputBinding:
+      position: 1
 outputs:
   outdir:
     type: Directory
