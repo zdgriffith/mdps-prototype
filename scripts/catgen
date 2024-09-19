@@ -61,6 +61,10 @@ def generate_catalog(
             meta_path = fpath.with_suffix(".json")
             LOG.debug("adding metadata %s", meta_path)
             item.add_asset("metadata", Asset(href=str(meta_path), roles=["metadata"]))
+            # Slack_2024-09-18: change asset keys from data/metadata to filename
+            for k in ["data", "metadata"]:
+                fn = os.path.basename(item.assets[k].href)
+                item.assets[fn] = item.assets.pop(k)
             json.dump(item.to_dict(), open(meta_path, "w"))
 
             catalog.add_link(Link(RelType.ITEM, str(meta_path), "application/json"))
