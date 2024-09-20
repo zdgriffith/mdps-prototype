@@ -6,7 +6,7 @@ import logging
 import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from concurrent.futures import ProcessPoolExecutor, _Future
+from concurrent.futures import ProcessPoolExecutor
 
 from pystac import Catalog, ItemCollection
 
