@@ -6,11 +6,11 @@ import logging
 import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from concurrent.futures import ProcessPoolExecutor, _Future
 
 from pystac import Catalog, ItemCollection
 
 LOG = logging
-
 
 def parse_timestamp(fname: str) -> datetime:
     # P1590011AAAAAAAAAAAAAT19245030010901.PDS
@@ -83,6 +83,7 @@ def gather_inputs(fpath: Path, roles: list[str]) -> list[Path]:
 
     Assumes the asset hrefs are local.
     """
+    LOG.info("splitting %s", fpath)
     output_paths = []
     data = json.load(fpath.open())
     if data.get("type", "") == "FeatureCollection":
@@ -120,13 +121,18 @@ def gather_inputs(fpath: Path, roles: list[str]) -> list[Path]:
 def main(
     collection_id: str, indir: Path, catalog_name: str, roles: list[str], destdir: Path
 ):
-    outputs = []
+    pool = ProcessPoolExecutor()
+
+    jobs = {} 
     catalog = indir / catalog_name
     for fpath in gather_inputs(catalog, roles=roles):
-        LOG.info("splitting %s", fpath)
-        outputs += split_one(fpath, destdir)
+        jobs[fpath] = pool.submit(split_one, fpath, destdir)
+
+    outputs = []
+    for fpath, job in jobs.items():
+        outputs += job.result()
         for output in outputs:
-            LOG.info("produced %s", output)
+            LOG.info("%s -> %s", fpath, output)
 
     run(
         [
