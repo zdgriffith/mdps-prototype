@@ -22,7 +22,16 @@ def strftime(d: datetime) -> str:
 
 
 def strptime(s: str) -> datetime:
-    return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%fZ")
+    for fmt in [
+        "%Y-%m-%dT%H:%M:%S.%fZ",
+        "%Y-%m-%dT%H:%M:%SZ",
+        "%Y-%m-%d",
+    ]:
+        try:
+            return datetime.strptime(s, fmt)
+        except (TypeError, ValueError):
+            pass
+    raise ValueError("Not a valid timestamp")
 
 
 def get_datasets(
@@ -32,7 +41,7 @@ def get_datasets(
     return service.get_collection_data(
         Collection(collection_id),  # type: ignore
         limit=100,
-        filter=f"start_datetime >= '{strftime(start)}' and end_datetime < '{strftime(end)}'",
+        filter=f"start_datetime <= '{strftime(end)}' and end_datetime >= '{strftime(start)}'",
     )  # type: ignore
 
 
@@ -91,16 +100,7 @@ def catalog_command(
 if __name__ == "__main__":
 
     def timestamp_arg(v: str) -> datetime:
-        for fmt in [
-            "%Y-%m-%dT%H:%M:%S.%fZ",
-            "%Y-%m-%dT%H:%M:%SZ",
-            "%Y-%m-%d",
-        ]:
-            try:
-                return datetime.strptime(v, fmt)
-            except (TypeError, ValueError):
-                pass
-        raise ValueError("Not a valid timestamp")
+        return strptime(v)
 
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
