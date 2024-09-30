@@ -14,7 +14,7 @@ mkdir -p tmp/workdir
 export TMPDIR=tmp/workdir
 
 # sync over the l0split workflow such that we can modify it to use local files
-mkdir tmp/workflow
+mkdir tmp/workflows
 rsync -av workflows/l0split tmp/workflows/
 
 # edit the unity S3 urls to be local HTTPS urls

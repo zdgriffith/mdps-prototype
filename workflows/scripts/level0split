@@ -1,21 +1,15 @@
 #!/usr/bin/env python3
-"""Split 2h Level-0 Time-based files into 6-min files."""
 import argparse
 import json
 import logging
 import subprocess
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from concurrent.futures import ProcessPoolExecutor
 
+import ccsds
+import fnmeta
 from pystac import Catalog, ItemCollection
 
-LOG = logging
-
-def parse_timestamp(fname: str) -> datetime:
-    # P1590011AAAAAAAAAAAAAT19245030010901.PDS
-    s = fname.split("T")[-1]
-    return datetime.strptime(s[:11], "%y%j%H%M%S")
+LOG = logging.getLogger("level0split")
 
 
 def run(cmd, **kwds) -> subprocess.CompletedProcess:
@@ -23,59 +17,6 @@ def run(cmd, **kwds) -> subprocess.CompletedProcess:
     cmd = [str(x) for x in cmd]
     LOG.info("%s", " ".join(cmd))
     return subprocess.run(cmd, **kwds)
-
-
-def get_dest(fpath: Path, dt: datetime, dest: Path) -> Path:
-    return dest / f"{fpath.name[:20]}6T{dt:%y%j%H%M%S}{fpath.name[-7:]}"
-
-
-def get_times(fpath: Path) -> tuple[datetime, datetime]:
-    """Use the first packet time in the file to determine the start/end times of the file."""
-    cmd = [
-        "ccsds",
-        "info",
-        "--format=json",
-        fpath,
-    ]
-    proc = run(cmd, capture_output=True)
-    zult = json.loads(proc.stdout)
-    dt = datetime.strptime(
-        zult["summary"]["first_packet_time"],
-        "%Y-%m-%dT%H:%M:%S.%fZ",
-    ).replace(tzinfo=timezone.utc)
-
-    return (
-        start := datetime.fromtimestamp(
-            dt.timestamp() - dt.timestamp() % 7200, timezone.utc
-        ),
-        start + timedelta(hours=2),
-    )
-
-
-def split_one(fpath: Path, dest: Path) -> list[Path]:
-    outputs = []
-    start, _end = get_times(fpath)
-    LOG.info("splitting file %s for time %s", fpath.name, start)
-    for i in range(20):
-        gran_start = start + timedelta(minutes=i * 6)
-        gran_end = gran_start + timedelta(minutes=6)
-        destpath = get_dest(fpath, gran_start, dest)
-        cmd = [
-            "ccsds",
-            "filter",
-            "--clobber",
-            "-o",
-            str(destpath),
-            "--before",
-            (gran_start - timedelta(seconds=10)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "--after",
-            (gran_end + timedelta(seconds=10)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            str(fpath),
-        ]
-        run(cmd)
-        outputs.append(destpath)
-
-    return outputs
 
 
 def gather_inputs(fpath: Path, roles: list[str]) -> list[Path]:
@@ -114,24 +55,59 @@ def gather_inputs(fpath: Path, roles: list[str]) -> list[Path]:
                     path,
                 )
                 continue
+            if not is_level0_pds(path.name):
+                LOG.warning(
+                    "skipping file not identifiable by fnmeta as level0 pds: %s", path
+                )
+                continue
             output_paths.append(path)
     return output_paths
 
 
-def main(
-    collection_id: str, indir: Path, catalog_name: str, roles: list[str], destdir: Path
-):
-    pool = ProcessPoolExecutor()
+spacecraft_apids = [0, 8, 11, 30, 34, 37]
+atms_apids = [515, 528, 530, 531]
+cris_apids = [1289, 1290] + list(range(1315, 1396))
+viirs_apids = list(range(800, 828))
+interesting_apids = set(spacecraft_apids + atms_apids + cris_apids + viirs_apids)
 
-    jobs = {} 
+
+def has_timecode(pkt: ccsds.Packet) -> bool:
+    return pkt.header.apid in interesting_apids
+
+
+def is_level0_pds(name: str) -> bool:
+    return "rec_type" in (fnmeta.identify(name) or {})
+
+
+def split_one(fpath: Path, dest: Path, file_duration: int) -> list[Path]:
+    assert "AT" in fpath.name, "Failed level0 pds sanity check"
+    outputs = {}
+    for pkt in ccsds.decode_packets(str(fpath)):
+        if not has_timecode(pkt):
+            LOG.warning("skipping packet apid not in interesting list: %s", pkt.header)
+            continue
+        # packets all have CDS timecodes at start of secondary header
+        timecode = ccsds.decode_cdc_timecode(pkt.data[6:14])
+        bucket = timecode - (timecode % file_duration)
+        if bucket not in outputs:
+            # first packet for this bucket, create new file in dest with 6t name
+            outputs[bucket] = (dest / fpath.name.replace("AT", "6T")).open("wb")
+        outputs[bucket].write(pkt.data)
+
+    return [o.name for o in outputs.values()]
+
+
+def main(
+    collection_id: str,
+    indir: Path,
+    catalog_name: str,
+    file_duration: int,
+    roles: list[str],
+    destdir: Path,
+):
     catalog = indir / catalog_name
     for fpath in gather_inputs(catalog, roles=roles):
-        jobs[fpath] = pool.submit(split_one, fpath, destdir)
-
-    outputs = []
-    for fpath, job in jobs.items():
-        outputs += job.result()
-        for output in outputs:
+        for output in split_one(fpath, destdir, file_duration):
             LOG.info("%s -> %s", fpath, output)
 
     run(
@@ -154,6 +130,13 @@ if __name__ == "__main__":
         # default="catalog.json",
         default="stage-in-results.json",
         help="Name of catalog/collection file in input dir",
+    )
+    parser.add_argument(
+        "-d",
+        "--file-duration",
+        type=int,
+        default=360,
+        help="File duration in seconds. Files will be aligned to 0z",
     )
     parser.add_argument(
         "input",
@@ -181,6 +164,7 @@ if __name__ == "__main__":
         args.collection_id,
         args.input,
         args.catalog_name,
+        args.file_duration,
         roles=["data"],
         destdir=args.output,
     )
