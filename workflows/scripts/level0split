@@ -3,6 +3,7 @@ import argparse
 import json
 import logging
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
 import ccsds
@@ -19,7 +20,7 @@ def run(cmd, **kwds) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, **kwds)
 
 
-def gather_inputs(fpath: Path, roles: list[str]) -> list[Path]:
+def gather_catalog_inputs(fpath: Path, roles: list[str]) -> list[Path]:
     """Gather input file paths from STAC catalog inputs.
 
     Assumes the asset hrefs are local.
@@ -82,31 +83,40 @@ def is_level0_pds(name: str) -> bool:
 def split_one(fpath: Path, dest: Path, file_duration: int) -> list[Path]:
     assert "AT" in fpath.name, "Failed level0 pds sanity check"
     outputs = {}
-    for pkt in ccsds.decode_packets(str(fpath)):
-        if not has_timecode(pkt):
-            LOG.warning("skipping packet apid not in interesting list: %s", pkt.header)
+    for group in ccsds.decode_packet_groups(str(fpath)):
+        if len(group.packets) == 0 or not group.packets[0].header.has_secondary_header:
             continue
         # packets all have CDS timecodes at start of secondary header
-        timecode = ccsds.decode_cdc_timecode(pkt.data[6:14])
+        timecode = (
+            ccsds.decode_cds_timecode(bytes(group.packets[0].data[6:15])) / 1000 / 1000
+        )
         bucket = timecode - (timecode % file_duration)
         if bucket not in outputs:
             # first packet for this bucket, create new file in dest with 6t name
-            outputs[bucket] = (dest / fpath.name.replace("AT", "6T")).open("wb")
-        outputs[bucket].write(pkt.data)
+            dt = datetime.fromtimestamp(bucket, tz=timezone.utc)
+            fname = f"{fpath.name[:21]}6{fpath.name[21]}{dt:%y%j%H%M%S}001.PDS"
+            outputs[bucket] = (dest / fname).open("wb")
+        for pkt in group.packets:
+            outputs[bucket].write(bytes(pkt.data))
 
     return [o.name for o in outputs.values()]
 
 
 def main(
     collection_id: str,
-    indir: Path,
+    input_: Path,
     catalog_name: str,
     file_duration: int,
-    roles: list[str],
     destdir: Path,
+    roles: list[str] | None = None,
 ):
-    catalog = indir / catalog_name
-    for fpath in gather_inputs(catalog, roles=roles):
+    if input_.is_dir():
+        catalog = input_ / catalog_name
+        inputs = gather_catalog_inputs(catalog, roles=roles or [])
+    else:
+        inputs = [input_]
+
+    for fpath in inputs:
         for output in split_one(fpath, destdir, file_duration):
             LOG.info("%s -> %s", fpath, output)
 
@@ -141,7 +151,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "input",
         type=Path,
-        help="Path to STAC feature collection containing all relavent inputs",
+        help="Path to a directory containing a STAC feature collection JSON file",
     )
     parser.add_argument(
         "-o",
@@ -165,6 +175,6 @@ if __name__ == "__main__":
         args.input,
         args.catalog_name,
         args.file_duration,
-        roles=["data"],
         destdir=args.output,
+        roles=["data"],
     )
