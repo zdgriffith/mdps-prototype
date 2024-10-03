@@ -1,0 +1,12 @@
+stac_json:
+  class: File
+  path: catalog.json
+collection_id: "urn:nasa:unity:asips:int:CLDMSK_L2_VIIRS_NOAA20___1"
+satellite: noaa20
+granule: "2019-08-28 00:00:00"
+l1b: VJ102MOD.A2019240.0000.021.2021280191056.uwssec.nc
+geo: VJ103MOD.A2019240.0000.021.2021280191005.uwssec.nc
+gdas1: gdas1.PGrbF00.190828.00z
+gdas2: gdas1.PGrbF00.190828.06z
+nise: NISE_SSMISF18_20190828.HDFEOS
+sst: oisst-avhrr-v02r01.20190828.nc

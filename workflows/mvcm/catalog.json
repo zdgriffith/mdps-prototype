@@ -1,0 +1,131 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "stac_version": "1.0.0",
+      "id": "gdas1.PGrbF00.190828.00z",
+      "properties": {
+        "start_datetime": "2019-08-28T00:00:00Z",
+        "end_datetime": "2019-08-28T00:00:00Z",
+        "datetime": "2019-08-28T00:00:00Z"
+      },
+      "geometry": null,
+      "links": [],
+      "assets": {
+        "data2": {
+          "href": "s3://asips-int-unity-data/urn:nasa:unity:asips:int:GDAS_0ZF___1/gdas1.PGrbF00.190828.00z",
+          "roles": [
+            "data"
+          ]
+        }
+      },
+      "stac_extensions": []
+    },
+    {
+      "type": "Feature",
+      "stac_version": "1.0.0",
+      "id": "gdas1.PGrbF00.190828.06z",
+      "properties": {
+        "start_datetime": "2019-08-28T00:06:00Z",
+        "end_datetime": "2019-08-28T00:06:00Z",
+        "datetime": "2019-08-28T00:06:00Z"
+      },
+      "geometry": null,
+      "links": [],
+      "assets": {
+        "data2": {
+          "href": "s3://asips-int-unity-data/urn:nasa:unity:asips:int:GDAS_0ZF___1/gdas1.PGrbF00.190828.06z",
+          "roles": [
+            "data"
+          ]
+        }
+      },
+      "stac_extensions": []
+    },
+    {
+      "type": "Feature",
+      "stac_version": "1.0.0",
+      "id": "NISE_SSMISF18_20190828.HDFEOS",
+      "properties": {
+        "start_datetime": "2019-08-28T00:00:00Z",
+        "end_datetime": "2019-08-28T23:59:59Z",
+        "datetime": "2019-08-28T00:00:00Z"
+      },
+      "geometry": null,
+      "links": [],
+      "assets": {
+        "data2": {
+          "href": "s3://asips-int-unity-data/urn:nasa:unity:asips:int:NISE___1/NISE_SSMISF18_20190828.HDFEOS",
+          "roles": [
+            "data"
+          ]
+        }
+      },
+      "stac_extensions": []
+    },
+    {
+      "type": "Feature",
+      "stac_version": "1.0.0",
+      "id": "oisst-avhrr-v02r01.20190828.nc",
+      "properties": {
+        "start_datetime": "2019-08-28T00:00:00Z",
+        "end_datetime": "2019-08-28T23:59:59Z",
+        "datetime": "2019-08-28T00:00:00Z"
+      },
+      "geometry": null,
+      "links": [],
+      "assets": {
+        "data2": {
+          "href": "s3://asips-int-unity-data/urn:nasa:unity:asips:int:OISST___1/oisst-avhrr-v02r01.20190828.nc",
+          "roles": [
+            "data"
+          ]
+        }
+      },
+      "stac_extensions": []
+    },
+    {
+      "type": "Feature",
+      "stac_version": "1.0.0",
+      "id": "VJ102MOD.A2019240.0000.021.2021280191056.uwssec.nc",
+      "properties": {
+        "start_datetime": "2019-08-28T00:00:00Z",
+        "end_datetime": "2019-08-28T00:05:59Z",
+        "datetime": "2019-08-28T00:00:00Z"
+      },
+      "geometry": null,
+      "links": [],
+      "assets": {
+        "data2": {
+          "href": "s3://asips-int-unity-data/urn:nasa:unity:asips:int:VJ102MOD___1/VJ102MOD.A2019240.0000.021.2021280191056.uwssec.nc",
+          "roles": [
+            "data"
+          ]
+        }
+      },
+      "stac_extensions": []
+    },
+    {
+      "type": "Feature",
+      "stac_version": "1.0.0",
+      "id": "VJ103MOD.A2019240.0000.021.2021280191005.uwssec.nc",
+      "properties": {
+        "start_datetime": "2019-08-28T00:00:00Z",
+        "end_datetime": "2019-08-28T00:05:59Z",
+        "datetime": "2019-08-28T00:00:00Z"
+      },
+      "geometry": null,
+      "links": [],
+      "assets": {
+        "data2": {
+          "href": "s3://asips-int-unity-data/urn:nasa:unity:asips:int:VJ103MOD___1/VJ103MOD.A2019240.0000.021.2021280191005.uwssec.nc",
+          "roles": [
+            "data"
+          ]
+        }
+      },
+      "stac_extensions": []
+    }
+  ]
+}
