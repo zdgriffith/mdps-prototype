@@ -1,0 +1,9 @@
+l1b: "l1b.nc"
+geo: "geo.nc"
+nise: "nise.dat"
+sst: "sst.dat"
+gdas1: "gdas1.dat"
+gdas2: "gdas2.dat"
+stac_json:
+  class: File
+  path: catalog.json
