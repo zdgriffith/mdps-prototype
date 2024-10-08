@@ -1,5 +1,0 @@
-{
-  "stac_json": {"type":"FeatureCollection","features":[{"type":"Feature","stac_version":"1.0.0","id":"P1590000AAAAAAAAAAAAAT19244050140701.PDS","properties":{"start_datetime":"2019-09-01T00:00:00.025000Z","end_datetime":"2019-09-01T01:59:59.020000Z","datetime":"2019-09-01T00:00:00.025000Z"},"geometry":null,"links":[],"assets":{"data0":{"href":"s3://asips-int-unity-data/urn:nasa:unity:asips:int:P1590000-T___1/P1590000AAAAAAAAAAAAAT19244050140701.PDS","roles":["data"]}},"stac_extensions":[]}]},
-  "collection_id": "urn:nasa:unity:asips:int:P1590000-6T___1"
-}
-

@@ -1,5 +1,5 @@
-ARG basever=latest
-FROM gitlab.ssec.wisc.edu:5555/sips/mdps-images/base:${basever}
+ARG basetag=latest
+FROM gitlab.ssec.wisc.edu:5555/sips/mdps-images/base:${basetag}
 
 # MVCM does not include all of it's required deps in the dist
 RUN dnf install -yq compat-libgfortran-48
