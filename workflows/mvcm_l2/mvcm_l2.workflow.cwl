@@ -3,13 +3,15 @@ cwlVersion: v1.2
 class: Workflow
 doc: |-
   Runs all the 6m L2 processing neccessary to product MVCM. This currently includes
-  oisst2bin, viirsmend, IFF.
+  oisst2bin, viirsmend, IFF, demlw, and mvcm.
 
-  Required inputs:
+  Required input files include:
     - VIIRS 02MOD, 03MOD
     - GDAS, 1 before, 1 after target time
     - NISE
     - SST (OISST)
+
+  All inputs must be present in the catalog in `stac_json`
 
 requirements:
   SubworkflowFeatureRequirement: {}
