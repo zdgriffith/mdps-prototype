@@ -1,7 +1,11 @@
 -i http://devpi.sips/sips/prod/+simple
 --trusted-host devpi.sips
 numpy<2.0
-viirsmend==1.2.12
+xarray
+cfgrib
+bottleneck
+viirsmend==1.2.17
 iff2==2.7.3
+demlw==1.0.7
 # Updated grain that uses SDTK leapsec file
 grain>=2.3.1

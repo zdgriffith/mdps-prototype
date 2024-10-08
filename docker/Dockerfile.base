@@ -8,6 +8,7 @@
 FROM rockylinux/rockylinux:9
 RUN dnf -yqq install epel-release && \
   dnf -yqq install \
+    netcdf \
     python3.11 \
     python3.11-pip \
     tini \

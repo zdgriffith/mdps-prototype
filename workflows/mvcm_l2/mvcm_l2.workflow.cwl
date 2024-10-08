@@ -18,18 +18,6 @@ requirements:
   StepInputExpressionRequirement: {}
 
 inputs:
-  l1b: 
-    type: string
-  geo: 
-    type: string
-  gdas1: 
-    type: string
-  gdas2: 
-    type: string
-  nise: 
-    type: string
-  sst: 
-    type: string
   stac_json:
     type:
       - string
@@ -58,11 +46,5 @@ steps:
   process:
     run: tasks/process.cwl
     in:
-      l1b: l1b
-      geo: geo
-      sst: sst
-      nise: nise
-      gdas1: gdas1
-      gdas2: gdas2
       indir: stage_in/stage_in_download_dir
     out: [outfile]

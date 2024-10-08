@@ -1,12 +1,17 @@
 ARG basever=latest
 FROM gitlab.ssec.wisc.edu:5555/sips/mdps-images/base:${basever}
-COPY deliveries/mvcm/ /software/mvcm/
-COPY deliveries/oisst2bin /software/oisst2bin 
+
+# MVCM does not include all of it's required deps in the dist
+RUN dnf install -yq compat-libgfortran-48
+
+# Deliveries and support software necessary to run pipeline
+COPY software/mvcm/ /software/mvcm/
+COPY software/oisst2bin/ /software/oisst2bin/
+COPY software/l1bscale/ /software/l1bscale/
+COPY software/demlw-static/ /software/demlw-static/
 COPY docker/run.py /software/run.py
 
-ENV PIP_INDEX_URL=http://devpi.sips/sips/prod/+simple
-ENV PIP_TRUSTED_HOST=devpi.sips
-
+# Python package requirements for iff2, viirsmend, demlw
 COPY docker/requirements.txt /software/
 RUN python3 -m pip install -r /software/requirements.txt
 

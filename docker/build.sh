@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 tag=latest
 if [[ -n $1 ]]; then
   tag=$1

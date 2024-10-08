@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import logging
 import os
 import shutil
@@ -18,28 +19,32 @@ def run(*args, **kwds):
 
 
 def oisst2bin(oisst: Path, gdas: Path):
-    swdir = "/software/oisst2bin"
-    output = oisst.with_name(f"oisst.{oisst.name[19:27]}")
+    swdir = Path("/software/oisst2bin")
+    output = Path(f"oisst.{oisst.name[19:27]}")
     run(
         [
-            f"{swdir}/source/oisst_nc2bin.py",
+            "python",
+            swdir / "source/oisst_nc2bin.py",
             str(oisst),
             str(gdas),
-            f"{swdir}/dist/inland_water.nc",
-            str(oisst),
+            swdir / "dist/inland_water.nc",
+            str(output),
         ],
         check=True,
         env={
             **os.environ,
-            "ECCODES_DEFINITION_PATH": f"{swdir}/dist/env/share/eccodes/definitions",
+            "ECCODES_DEFINITION_PATH": str(
+                swdir / "dist/env/share/eccodes/definitions"
+            ),
         },
     )
+    assert output.exists()
     return output
 
 
 def viirsmend(l1b: Path, geo: Path) -> Path:
     """(L1B, GEO) -> Mended L1B"""
-    output = l1b.with_name(l1b.name.replace(".nc", "mended.nc"))
+    output = Path(l1b.name.replace(".nc", ".mended.nc"))
     shutil.copy(l1b, output)
     run(
         [
@@ -51,19 +56,27 @@ def viirsmend(l1b: Path, geo: Path) -> Path:
         ],
         check=True,
     )
+    assert output.exists()
     return output
 
 
 def l1bscale(satellite: str, l1b: Path) -> Path:
     """L1B -> Scaled L1B"""
-    swdir = "/software/l1bscale"
+    swdir = Path("/software/l1bscale")
     if satellite == "snpp":
         satellite = "npp"
-    scale_factors = f"{swdir}/{satellite}_scale_factors.txt"
+    scale_factors = swdir / f"dist/{satellite}_scale_factors.txt"
+    if not scale_factors.exists():
+        raise ValueError(f"{scale_factors} does not exist")
     run(
-        [f"{swdir}/bin/VIIRS_L1BSCALE.exe", str(l1b), scale_factors],
+        [swdir / "dist/bin/VIIRS_L1BSCALE.exe", l1b, scale_factors],
         check=True,
+        env={
+            **os.environ,
+            "LD_LIBRARY_PATH": swdir / "dist/lib",
+        },
     )
+    assert l1b.exists()
     return l1b
 
 
@@ -90,12 +103,12 @@ def iff(
     granule: datetime,
     l1b: Path,
     geo: Path,
-    output_type: str = "hdf",
-    band_type: str = "M",
+    output_type: str = "HDF4",
+    band_type: str = "svm",
 ) -> Path:
     output = Path(
         create_iff_filename(
-            ("IFF" + {"M": "SVM", "I": "SVI", "DNB": "DNB"}[band_type]),
+            f"IFF{band_type.upper()}",
             satellite,
             granule,
             output_type,
@@ -105,6 +118,7 @@ def iff(
         "python",
         "-m",
         "iff2.iff2",
+        "-v",
         "-o",
         str(output),
         "--hdf4" if output_type == "HDF4" else "",
@@ -118,6 +132,7 @@ def iff(
         str(geo),
     ]
     run(cmd, check=True)
+    assert output.exists()
     return output
 
 
@@ -129,25 +144,33 @@ def mvcm(
     gdas: tuple[Path, Path],
     sst: Path,
 ) -> Path:
+    run("""pwd; find . -ls""", shell=True)
+
+    swdir = Path("/software/mvcm")
     created = datetime.utcnow()
     output = Path(
         f"CLDMSK_L2_VIIRS_SNPP.{granule:A%Y%j.%H%M}.001.{created:%Y%j%H%M%S}.nc"
     )
     run(
         [
-            "/software/mvcm/run.py",
+            swdir / "dist/run.py",
             "--out",
             str(output),
             satellite,
             granule.strftime("%Y-%j %H:%M:%S"),
-            str(iffsvm),
-            str(nise),
-            str(sst),
-            str(gdas[0]),
-            str(gdas[1]),
+            str(iffsvm.absolute()),
+            str(nise.absolute()),
+            str(sst.absolute()),
+            str(gdas[0].absolute()),
+            str(gdas[1].absolute()),
         ],
+        env={
+            **os.environ,
+            "LD_LIBRARY_PATH": swdir / "dist/lib",
+        },
         check=True,
     )
+    assert output.exists()
     return output
 
 
@@ -159,6 +182,45 @@ class Inputs:
     nise: Path
     gdas1: Path
     gdas2: Path
+
+    @staticmethod
+    def from_dir(dirpath: Path):
+        def findone(pat: str, expect: int = 1) -> list[Path]:
+            if len(x := list(dirpath.glob(pat))) != expect:
+                raise ValueError(
+                    f"Expected {expect} files matching {pat}, got {len(x)}"
+                )
+            return x
+
+        gdas = list(sorted(findone("gdas1.PGrbF00.*z", expect=2)))
+        return Inputs(
+            l1b=findone("V??02MOD.A*.nc")[0],
+            geo=findone("V??03MOD.A*.nc")[0],
+            sst=findone("oisst-avhrr*.nc")[0],
+            nise=findone("NISE_*.HDFEOS")[0],
+            gdas1=gdas[0],
+            gdas2=gdas[1],
+        )
+
+
+def demlw(iff: Path) -> Path:
+    swdir = Path("/software/demlw-static")
+    run(
+        [
+            "python",
+            "-m",
+            "demlw.ifflw",
+            iff,
+        ],
+        env={
+            **os.environ,
+            # Land Water Data
+            "DEMLW_DIR": str(swdir),
+            # Land Water Cache starting in version 1.2
+            "LW_CACHE_FILE": str(swdir / "lw-cache.npy"),
+        },
+    )
+    return iff
 
 
 def pipeline(inputs: Inputs):
@@ -172,6 +234,7 @@ def pipeline(inputs: Inputs):
     l1b = viirsmend(inputs.l1b, inputs.geo)
     l1b = l1bscale(satellite, l1b)
     iffsvm = iff(satellite, granule, l1b, inputs.geo)
+    iffsvm = demlw(iffsvm)
     sst = oisst2bin(inputs.sst, inputs.gdas1)
 
     mvcm(
@@ -188,18 +251,21 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--l1b")
-    parser.add_argument("--geo")
-    parser.add_argument("--gdas1")
-    parser.add_argument("--gdas2")
-    parser.add_argument("--sst")
+    parser.add_argument("--verbose", action="store_true")
+    parser.add_argument("--indir", type=Path)
     args = parser.parse_args()
 
-    inputs = Inputs(
-        **{k: getattr(args, k) for k in ["l1b", "geo", "sst", "gdas1", "gdas2"]}
-    )
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    LOG.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 
+    if not args.indir.is_dir() or not args.indir.exists():
+        parser.error(f"Invalid input directory: {args.indir}")
+
+    for path in args.indir.glob("*.json"):
+        LOG.debug("%s:\n%s", path, json.dumps(json.load(open(path)), indent=2))
+
+    inputs = Inputs.from_dir(args.indir)
     for k, v in asdict(inputs).items():
-        LOG.info("input %s -> %s", k, v.abspath())
+        LOG.info("input %s -> %s", k, v.absolute())
 
     pipeline(inputs)
