@@ -223,7 +223,7 @@ def demlw(iff: Path) -> Path:
     return iff
 
 
-def pipeline(inputs: Inputs):
+def pipeline(inputs: Inputs) -> Path:
     meta = fnmeta.identify(inputs.l1b.name)
     if not meta:
         raise ValueError(f"Failed to identify {inputs.l1b}")
@@ -237,7 +237,7 @@ def pipeline(inputs: Inputs):
     iffsvm = demlw(iffsvm)
     sst = oisst2bin(inputs.sst, inputs.gdas1)
 
-    mvcm(
+    output = mvcm(
         satellite,
         granule,
         iffsvm,
@@ -245,6 +245,12 @@ def pipeline(inputs: Inputs):
         (inputs.gdas1, inputs.gdas2),
         sst,
     )
+    return output
+
+
+def generate_catalog(collection_id: str, output: Path):
+    LOG.info("generating catalog for {collection_id=} {output=}")
+    run(["catgen", collection_id, str(output)], check=True)
 
 
 if __name__ == "__main__":
@@ -253,6 +259,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--indir", type=Path)
+    parser.add_argument("--collection_id")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -268,4 +275,6 @@ if __name__ == "__main__":
     for k, v in asdict(inputs).items():
         LOG.info("input %s -> %s", k, v.absolute())
 
-    pipeline(inputs)
+    output = pipeline(inputs)
+
+    generate_catalog(args.collection_id, output)
