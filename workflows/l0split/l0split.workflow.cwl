@@ -22,15 +22,15 @@ inputs:
   collection_id: string
 
 outputs:
-  #datadir:
-  #  type: Directory
-  #  outputSource: process/outdir
-  # catdir:
-  #   type: Directory
-  #   outputSource: catgen/outdir
   outdir:
     type: File
     outputSource: stage_out/stage_out_results
+  failed:
+    type: File
+    outputSource: stage_out/failed_features
+  successful:
+    type: File
+    outputSource: stage_out/successful_features
 
 steps:
 
@@ -48,14 +48,6 @@ steps:
       input: stage_in/stage_in_download_dir
       collection_id: collection_id
     out: [outdir]
-
-  # catgen:
-  #   run: tasks/catgen.cwl
-  #   in:
-  #     indir: process/outdir
-  #     pattern:
-  #       valueFrom: "*.PDS"
-  #   out: [outdir]
 
   stage_out:
     run: "http://awslbdockstorestack-lb-1429770210.us-west-2.elb.amazonaws.com:9998/api/ga4gh/trs/v2/tools/%23workflow%2Fdockstore.org%2Fmike-gangl%2Funity-example-application/versions/8/PLAIN-CWL/descriptor/%2Fstage_out.cwl"

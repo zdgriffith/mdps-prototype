@@ -94,7 +94,7 @@ def split_one(fpath: Path, dest: Path, file_duration: int) -> list[Path]:
         if bucket not in outputs:
             # first packet for this bucket, create new file in dest with 6t name
             dt = datetime.fromtimestamp(bucket, tz=timezone.utc)
-            fname = f"{fpath.name[:21]}6{fpath.name[21]}{dt:%y%j%H%M%S}001.PDS"
+            fname = f"{fpath.name[:20]}6{fpath.name[21]}{dt:%y%j%H%M%S}001.PDS"
             outputs[bucket] = (dest / fname).open("wb")
         for pkt in group.packets:
             outputs[bucket].write(bytes(pkt.data))
