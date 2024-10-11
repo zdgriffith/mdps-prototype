@@ -12,7 +12,7 @@ import fnmeta
 import pystac
 from pystac import Asset, Catalog, CatalogType, Item, Link, RelType
 
-LOG = logging.getLogger(Path(__file__).name)
+LOG = logging.getLogger("caten")
 
 
 def get_times(fpath: Path) -> "tuple[datetime, datetime] | None":
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(name)s -- %(message)s")
     LOG.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 
     catalog = generate_catalog(

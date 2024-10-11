@@ -113,25 +113,27 @@ def iff(
             granule,
             output_type,
         )
+    ).absolute()
+    run(
+        [
+            "python",
+            "-m",
+            "iff2.iff2",
+            "-v",
+            "-o",
+            str(output),
+            "--hdf4" if output_type == "HDF4" else "",
+            satellite,
+            "viirs-nasa",
+            band_type,
+            f"{granule:%Y%m%d}",
+            f"{granule:%H%M%S}",
+            f"{granule + timedelta(minutes=6, seconds=-1):%H%M%S}",
+            str(l1b),
+            str(geo),
+        ],
+        check=True,
     )
-    cmd = [
-        "python",
-        "-m",
-        "iff2.iff2",
-        "-v",
-        "-o",
-        str(output),
-        "--hdf4" if output_type == "HDF4" else "",
-        satellite,
-        "viirs-nasa",
-        band_type,
-        f"{granule:%Y%m%d}",
-        f"{granule:%H%M%S}",
-        f"{granule + timedelta(minutes=6, seconds=-1):%H%M%S}",
-        str(l1b),
-        str(geo),
-    ]
-    run(cmd, check=True)
     assert output.exists()
     return output
 
@@ -144,8 +146,6 @@ def mvcm(
     gdas: tuple[Path, Path],
     sst: Path,
 ) -> Path:
-    run("""pwd; find . -ls""", shell=True)
-
     swdir = Path("/software/mvcm")
     created = datetime.utcnow()
     output = Path(
@@ -249,7 +249,7 @@ def pipeline(inputs: Inputs) -> Path:
 
 
 def generate_catalog(collection_id: str, output: Path):
-    LOG.info("generating catalog for {collection_id=} {output=}")
+    LOG.info(f"generating catalog for {collection_id=} {output=}")
     run(["catgen", collection_id, str(output)], check=True)
 
 
@@ -262,7 +262,7 @@ if __name__ == "__main__":
     parser.add_argument("--collection_id")
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(name)s -- %(message)s")
     LOG.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 
     if not args.indir.is_dir() or not args.indir.exists():

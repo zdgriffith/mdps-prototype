@@ -164,7 +164,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.INFO, format="%(message)s"
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        format="%(name)s -- %(message)s",
     )
 
     if not args.input.exists():

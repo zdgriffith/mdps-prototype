@@ -55,7 +55,7 @@ steps:
       download_type: download_type
       stac_json: stac_json
       unity_client_id: unity_client_id
-    out: [stage_in_collection_file, stage_in_download_dir]
+    out: [stage_in_download_dir]
 
   process:
     run: tasks/process.cwl
