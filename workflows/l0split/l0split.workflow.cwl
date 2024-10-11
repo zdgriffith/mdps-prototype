@@ -22,9 +22,9 @@ inputs:
   collection_id: string
 
 outputs:
-  datadir:
-    type: Directory
-    outputSource: process/outdir
+  #datadir:
+  #  type: Directory
+  #  outputSource: process/outdir
   # catdir:
   #   type: Directory
   #   outputSource: catgen/outdir
