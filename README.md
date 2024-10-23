@@ -11,27 +11,17 @@ The approximate pipeline
 ![CLDMSK_L0_to_M3](./artifacts/CLDMSK_L0_to_M3_chain.svg)
 
 
-## Application Tasks (`./tasks`)
-This directory contains sub-workflows that make up the end-to-end workflow. They are 
-intended to be simply workflows containing containerized versions of parts of the 
-entire workflow while not getting wrapped up in the entire Application Package spec,
-e.g., STAC catlog input and output.
-
-These tasks will be used as subworkflows to the overall workflow that will end up 
-being the Application Package.
-
-
 ## Applicaiton Workflows (`./workflows`)
-I expect these will eventually become the OGC Application packages.
+Workflows that will make up the processing chain documented in the above image.
 
-Currently, there's just the WIP [process6m](./workflows/process6m.workflow.cwl) workflow.
-
-
-## STAC Catalog
-Inputs to OCG Applications are provided as STAC Catalogs.
-
-See [pystac](https://pystac.readthedocs.io/en/stable/index.html) for catalog and collection
-generation code.
+Current Workflows:
+* [l0split](./workflows/l0split/l0split.workflow.cwl)
+    - Splits 2h time-based NASA Level-0 PDS files into 6m chunks
+* [viirs_l1](./workflows/viirs_l1)
+    - Runs NASA VIIRS L1 to product L1B and GEO
+    - WIP
+* [mvcm_l2](./workflows/mvcm_l2/mvcm_l2.workflow.cwl)
+    - Runs L2 software necessary to generate CLDMSK
 
 
 # References:

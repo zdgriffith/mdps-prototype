@@ -12,7 +12,7 @@ import fnmeta
 import pystac
 from pystac import Asset, Catalog, CatalogType, Item, Link, RelType
 
-LOG = logging.getLogger(Path(__file__).name)
+LOG = logging.getLogger("caten")
 
 
 def get_times(fpath: Path) -> "tuple[datetime, datetime] | None":
@@ -72,6 +72,9 @@ def generate_catalog(
             LOG.exception("failed to create or add item for %s", fpath.name)
             continue
 
+    if len(list(catalog.get_all_items())) == 0:
+        raise ValueError("(catgen) Failed to catalog any files")
+
     # catalog.normalize_hrefs(str(basedir.absolute()))
     # catalog.make_all_asset_hrefs_relative()
     catalog.save(catalog_type=CatalogType.SELF_CONTAINED)
@@ -88,7 +91,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(name)s -- %(message)s")
     LOG.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 
     catalog = generate_catalog(

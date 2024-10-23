@@ -1,24 +1,26 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.12
 import argparse
+import os
 import json
 import logging
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-import ccsds
-import fnmeta
 from pystac import Catalog, ItemCollection
 
-LOG = logging.getLogger("level0split")
+LOG = logging.getLogger("viirsl1")
 
 
 def run(cmd, **kwds) -> subprocess.CompletedProcess:
     kwds.setdefault("check", True)
     cmd = [str(x) for x in cmd]
     LOG.info("%s", " ".join(cmd))
-    return subprocess.run(cmd, **kwds)
-
+    try:
+        return subprocess.run(cmd, **kwds)
+    except subprocess.CalledProcessError as e:
+        LOG.warning(f"viirls1 {e}")
+        return subprocess.CompletedProcess
 
 def gather_catalog_inputs(fpath: Path, roles: list[str]) -> list[Path]:
     """Gather input file paths from STAC catalog inputs.
@@ -56,50 +58,39 @@ def gather_catalog_inputs(fpath: Path, roles: list[str]) -> list[Path]:
                     path,
                 )
                 continue
-            if not is_level0_pds(path.name):
-                LOG.warning(
-                    "skipping file not identifiable by fnmeta as level0 pds: %s", path
-                )
-                continue
             output_paths.append(path)
     return output_paths
 
 
-spacecraft_apids = [0, 8, 11, 30, 34, 37]
-atms_apids = [515, 528, 530, 531]
-cris_apids = [1289, 1290] + list(range(1315, 1396))
-viirs_apids = list(range(800, 828))
-interesting_apids = set(spacecraft_apids + atms_apids + cris_apids + viirs_apids)
-
-
-def has_timecode(pkt: ccsds.Packet) -> bool:
-    return pkt.header.apid in interesting_apids
-
-
-def is_level0_pds(name: str) -> bool:
-    return "rec_type" in (fnmeta.identify(name) or {})
-
-
-def split_one(fpath: Path, dest: Path, file_duration: int) -> list[Path]:
-    assert "AT" in fpath.name, "Failed level0 pds sanity check"
-    outputs = {}
-    for group in ccsds.decode_packet_groups(str(fpath)):
-        if len(group.packets) == 0 or not group.packets[0].header.has_secondary_header:
-            continue
-        # packets all have CDS timecodes at start of secondary header
-        timecode = (
-            ccsds.decode_cds_timecode(bytes(group.packets[0].data[6:15])) / 1000 / 1000
-        )
-        bucket = timecode - (timecode % file_duration)
-        if bucket not in outputs:
-            # first packet for this bucket, create new file in dest with 6t name
-            dt = datetime.fromtimestamp(bucket, tz=timezone.utc)
-            fname = f"{fpath.name[:20]}6{fpath.name[21]}{dt:%y%j%H%M%S}001.PDS"
-            outputs[bucket] = (dest / fname).open("wb")
-        for pkt in group.packets:
-            outputs[bucket].write(bytes(pkt.data))
-
-    return [o.name for o in outputs.values()]
+def run_l1a(input_paths):
+    for p in input_paths:
+        if p.name.find("0008AAAAAAAAAAAAA6T")>=0:
+            adcs = p
+        if p.name.find("0011AAAAAAAAAAAAA6T")>=0:
+            diary = p
+        if p.name.find("0000AAAAAAAAAAAAA6T")>=0:
+            bus = p
+        if p.name.find("0826VIIRSSCIENCEA6T")>=0:
+            sci = p
+    cmd = (
+            "viirsl1",
+            "noaa20",
+            "l1a",
+            str(sci),
+            str(diary),
+            str(adcs),
+            str(bus)
+    )
+    LOG.info(f"running: {' '.join(cmd)}")
+    run(cmd)
+    l1a_fn = sorted(Path("./").glob("V*L1A*.nc"))
+    assert len(l1a_fn)==1
+    l1a_fn = l1a_fn[0]
+    dt = datetime.strptime(l1a_fn.name.split(".")[0], "V%Y%j%H%M%S")
+    collection = "002"
+    out_fn = f"VJ101.A{dt:%Y%j.%H%M}.{collection}.{datetime.now().strftime('%Y%j%H%M%S')}.nc"
+    os.rename(l1a_fn, out_fn)
+    LOG.info(f"L1A created: {out_fn}")
 
 
 def main(
@@ -110,22 +101,21 @@ def main(
     destdir: Path,
     roles: list[str] | None = None,
 ):
+    LOG.info("starting viirsl1")
     if input_.is_dir():
         catalog = input_ / catalog_name
         inputs = gather_catalog_inputs(catalog, roles=roles or [])
     else:
         inputs = [input_]
 
-    for fpath in inputs:
-        for output in split_one(fpath, destdir, file_duration):
-            LOG.info("%s -> %s", fpath, output)
+    run_l1a(inputs)
 
     run(
         [
             "catgen",
             "--verbose",
             collection_id,
-            f"{destdir}/*.PDS",
+            f"{destdir}/V*01.A*.nc",
         ],
         check=True,
     )
@@ -164,8 +154,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.INFO,
-        format="%(name)s -- %(message)s",
+        level=logging.DEBUG if args.verbose else logging.INFO, format="%(message)s"
     )
 
     if not args.input.exists():

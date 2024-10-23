@@ -1,20 +1,24 @@
 # vim: ft=yaml:
 cwlVersion: v1.2
 class: CommandLineTool
-baseCommand: ["level0split", "--verbose"]
+baseCommand: ["/software/run.py", "--verbose"]
 requirements:
   DockerRequirement:
-    dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-images/l0split:0143a15
+    dockerPull: gitlab.ssec.wisc.edu:5555/sips/mdps-images/mvcm_l2
 inputs:
-  input:
+  indir:
     type: Directory
     inputBinding:
-      position: 0
+      prefix: --indir
   collection_id:
     type: string
     inputBinding:
-      position: 1
+      prefix: --collection_id
 outputs:
+  outfile:
+    type: File
+    outputBinding:
+      glob: CLDMSK_L2*.nc
   outdir:
     type: Directory
     outputBinding:

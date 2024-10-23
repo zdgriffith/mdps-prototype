@@ -11,10 +11,9 @@ rm -fr tmp/
 
 # TMPDIR is used for running stages of our workflow
 mkdir -p tmp/workdir
-export TMPDIR=tmp/workdir
 
 # sync over the l0split workflow such that we can modify it to use local files
-mkdir tmp/workflow
+mkdir tmp/workflows
 rsync -av workflows/l0split tmp/workflows/
 
 # edit the unity S3 urls to be local HTTPS urls
@@ -24,6 +23,7 @@ sed -i "s,s3://.*__1,https://sipsdev.ssec.wisc.edu/~steved," tmp/workflows/l0spl
 echo "download_type: HTTP" >>tmp/workflows/l0split/l0split.inputs.yaml
 
 time cwltool \
+  --tmpdir-prefix=tmp/workdir/ \
   --outdir=tmp/outputs/ \
   --log-dir=tmp/logs/ \
   --no-warning \
